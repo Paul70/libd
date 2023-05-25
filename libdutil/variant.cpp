@@ -18,7 +18,7 @@ bool Variant::isMonostate() const
     return type_ == Type::MONOSTATE;
 }
 
-bool Variant::isString() const
+bool Variant::isString()
 {
     return type_ == Type::STRING;
 }

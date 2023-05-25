@@ -14,17 +14,17 @@ template<typename ENUM_BASE_TYPE>
 using MapType = std::map<ENUM_BASE_TYPE, std::string>;
 
 template<typename ENUM_BASE_TYPE>
-void initNameMap([[maybe_unused]] MapType<ENUM_BASE_TYPE>& map, std::string const& arg)
+void initNameMap(MapType<ENUM_BASE_TYPE> &map, std::string const &arg)
 {
     StringList list = Utility::split(arg);
 
     // Default initial enum value, may be overwritten after string arg parsing.
     ENUM_BASE_TYPE initVal = 0;
-    if(list.front().find('=') != std::string::npos) {
+    if (list.front().find('=') != std::string::npos) {
     }
 
     // fill map with all enum values
-    for(auto& enumValue : list) {
+    for (auto &enumValue : list) {
         map.emplace(std::make_pair(initVal, enumValue));
         ++initVal;
     }
@@ -47,25 +47,35 @@ public:
     static_assert(!std::is_abstract_v<ENUM_BASE_TYPE>, "Enum Base Type has to be an arithmetic type.");
 
     NamedEnumBase() :
-        value_(getDefaultValue())
+        value_(NamedEnumBase::getDefaultValue())
     {}
 
     NamedEnumBase(ENUM_BASE_TYPE value) :
         value_(value)
     {}
 
+    /*! \brief Conversion operator
+     *
+     * Define an implicit conversion operator which converts a NamedEnum value
+     * in its underlying base type (by default, this base type is int or DUTIL::label_t).
+     */
+    operator ENUM_BASE_TYPE() const
+    {
+        return value_;
+    }
+
 protected:
-    static void initNameMap(NamedEnumDetail::MapType<ENUM_BASE_TYPE>& map)
+    static void initNameMap(NamedEnumDetail::MapType<ENUM_BASE_TYPE> &map)
     {
         NamedEnumDetail::initNameMap(map, DERIVED_ENUM_CLASS::getValueList());
     }
 
-    static NamedEnumDetail::MapType<ENUM_BASE_TYPE>& getNameMap()
+    static NamedEnumDetail::MapType<ENUM_BASE_TYPE> &getNameMap()
     {
         // static map at compile time
         static NamedEnumDetail::MapType<ENUM_BASE_TYPE> nameMap;
-        if(nameMap.empty) {
-            initNameMap();
+        if (nameMap.empty()) {
+            initNameMap(nameMap);
         }
         return nameMap;
     }
@@ -92,23 +102,26 @@ private:
  *
  * NamedEnumBase is the interface class for ENUM_NAME class.
  */
-#define D_NAMED_WRAPPED_ENUM(ENUM_NAME, ENUM_TYPE, ...) \
-    class ENUM_NAME : public DUTIL::NamedEnumBase<ENUM_NAME, ENUM_TYPE> \
-    { \
-    public: \
-        using EnumValues = enum : ENUM_TYPE { __VA_ARGS__ }; \
-        ENUM_NAME(EnumValues value) : \
-            DUTIL::NamedEnumBase<ENUM_NAME, ENUM_TYPE>(value) \
-        {} \
-        static const std::string getEnumName() \
-        { \
-            return #ENUM_NAME; \
-        } \
-        static const std::string getValueList() \
-        { \
-            return #__VA_ARGS__; \
-        } \
-    };
+#define D_NAMED_WRAPPED_ENUM(ENUM_NAME, ENUM_TYPE, ...)                 \
+class ENUM_NAME : public DUTIL::NamedEnumBase<ENUM_NAME, ENUM_TYPE>     \
+{                                                                       \
+public:                                                                 \
+    using EnumValues = enum : ENUM_TYPE {__VA_ARGS__};                  \
+    ENUM_NAME(EnumValues value) :                                       \
+        DUTIL::NamedEnumBase<ENUM_NAME, ENUM_TYPE>(value)               \
+    {}                                                                  \
+    ENUM_NAME()                                                         \
+        : DUTIL::NamedEnumBase<ENUM_NAME, ENUM_TYPE>()                  \
+    {}                                                                  \
+    static const std::string getEnumName()                              \
+    {                                                                   \
+        return #ENUM_NAME;                                              \
+    }                                                                   \
+    static const std::string getValueList()                             \
+    {                                                                   \
+        return #__VA_ARGS__;                                            \
+    }                                                                   \
+};
 
 //! Shortcut macro for defining a named enum with DUTIL::lable_t, that is int, its as base type
 #define D_NAMED_ENUM(ENUM_NAME, ...) D_NAMED_WRAPPED_ENUM(ENUM_NAME, DUTIL::label_t, __VA_ARGS__)

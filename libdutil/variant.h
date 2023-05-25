@@ -25,7 +25,8 @@ template<typename T>
 constexpr bool is_allowed_arithmetic_type_v = is_allowed_arithmetic_type<T>::value;
 
 template<typename T>
-struct is_allowed_type : public std::disjunction<is_allowed_arithmetic_type<T>, Utility::is_string<T>>
+struct is_allowed_type
+    : public std::disjunction<is_allowed_arithmetic_type<T>, Utility::is_string<T>>
 {};
 
 template<typename T>
@@ -48,37 +49,31 @@ overloaded(Ts...) -> overloaded<Ts...>;
 class Variant
 {
 public:
-    // muss ich noch mit einem named enum machen
-    D_NAMED_ENUM(TypeNamed, MONO, INT, UINT, DOUB, BOO, CHA, STR)
+    // muss ich fixen diese warning
+    D_NAMED_ENUM(Type, MONOSTATE, INT64, UINT64, DOUBLE, BOOL, CHAR, STRING)
 
-    enum class Type { MONOSTATE,
-                      INT64,
-                      UINT64,
-                      DOUBLE,
-                      BOOL,
-                      CHAR,
-                      STRING };
-
-    using DutilVariant = std::variant<std::monostate, std::int64_t, std::uint64_t, double, bool, char, std::string>;
+    using DutilVariant
+        = std::variant<std::monostate, std::int64_t, std::uint64_t, double, bool, char, std::string>;
 
     //! Default construct empty variant, current variant type is std::monostate.
     explicit Variant();
 
-    //! constructor with initial value
-    template<typename InitialType, std::enable_if_t<VariantDetail::is_allowed_type_v<InitialType>, bool> = true>
+    //! Constructor with initial value for variant and type.
+    template<typename InitialType,
+             std::enable_if_t<VariantDetail::is_allowed_type_v<InitialType>, bool> = true>
     explicit Variant(InitialType const value) :
         var_(value),
         type_()
     {
-        if constexpr(std::is_same_v<InitialType, std::int64_t>)
+        if constexpr (std::is_same_v<InitialType, std::int64_t>)
             type_ = Type::INT64;
-        else if constexpr(std::is_same_v<InitialType, std::uint64_t>)
+        else if constexpr (std::is_same_v<InitialType, std::uint64_t>)
             type_ = Type::UINT64;
-        else if constexpr(std::is_same_v<InitialType, double>)
+        else if constexpr (std::is_same_v<InitialType, double>)
             type_ = Type::DOUBLE;
-        else if constexpr(std::is_same_v<InitialType, bool>)
+        else if constexpr (std::is_same_v<InitialType, bool>)
             type_ = Type::BOOL;
-        else if constexpr(std::is_same_v<InitialType, char>)
+        else if constexpr (std::is_same_v<InitialType, char>)
             type_ = Type::CHAR;
         else
             type_ = Type::STRING;
@@ -87,7 +82,7 @@ public:
     Type getType() const;
 
     bool isMonostate() const;
-    bool isString() const;
+    bool isString();
     bool isNumeric() const;
     bool isCharacter() const;
     bool isBool() const;
@@ -100,20 +95,21 @@ public:
         std::visit(VariantDetail::overloaded{
                        [&result](auto arg) {
                            using VariantType = std::decay_t<decltype(arg)>;
-                           if constexpr(std::is_unsigned_v<T> && !std::is_unsigned_v<VariantType>) {
-                               if(arg < 0) { // change sign
+                           if constexpr (std::is_unsigned_v<T> && !std::is_unsigned_v<VariantType>) {
+                               if (arg < 0) { // change sign
                                    arg *= -1;
                                }
                            }
-                           if constexpr(std::is_arithmetic_v<T>) { // both types T and VariantType are arithmetic
+                           if constexpr (std::is_arithmetic_v<T>) { // both types T and
+                                                                    // VariantType are
+                                                                    // arithmetic
                                result.first = std::is_convertible_v<VariantType, T>;
-                               if(result.first) {
+                               if (result.first) {
                                    result.second = static_cast<T>(arg);
                                    return;
                                }
                                result.second = T(0);
-                           }
-                           else { // Target type T is string and variant type is arithmetic
+                           } else { // Target type T is string and variant type is arithmetic
                                result = Utility::toString(arg);
                            }
                        },
