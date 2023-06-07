@@ -23,7 +23,8 @@ public:
         return value_;
     }
 
-    //! Bracket operator to return a copy of parameter value.
+    //! Define an implicit conversion operator in order to be able to use
+    //! derived class objects as their underlying parameter type, e.g. with comparision operators.
     operator T() const
     {
         return value_;
