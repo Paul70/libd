@@ -7,6 +7,7 @@ set(libd_tests_SOURCES
     testbase.cpp
     testdummy.cpp
     libdutil/basictypestests.cpp
+    libdutil/factorytests.cpp
     libdutil/namedclasstests.cpp
     libdutil/namedenumtests.cpp
     libdutil/namedparametertests.cpp
@@ -27,9 +28,16 @@ target_include_directories(libd_tests PUBLIC
 )
 
 # Internal library dependencies
-target_link_libraries(libd_tests PUBLIC dglobals dutil)
+target_link_libraries(libd_tests PUBLIC
+    dglobals
+    dutil
+)
 
 # External library dependencies
-target_link_libraries(libd_tests PUBLIC gtest gmock pthread)
+target_link_libraries(libd_tests PUBLIC
+    gtest
+    gmock
+    pthread
+)
 
 

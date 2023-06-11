@@ -1,14 +1,15 @@
 #include "testdummy.h"
 #include "libd/libdutil/constructiondata.h"
 
-using namespace LIBD::TESTS;
+using namespace LIBD;
+using namespace TESTS;
 using namespace DUTIL;
 
-TestDummy::TestDummy(COLOR color) :
-    color_(color)
-{}
+D_DEFINE_PROJECTWARE(TestDummy);
 
-TestDummy::COLOR const& TestDummy::getNamedEnum() const
+TestDummy::TestDummy(COLOR color) : color_(color) {}
+
+TestDummy::COLOR const &TestDummy::getNamedEnum() const
 {
     return color_;
 }

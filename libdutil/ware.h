@@ -5,6 +5,10 @@
 
 namespace DUTIL {
 
+/*! \brief Interface class for objects that can be build using a concrete factroy.
+ *
+ * short explanation why we do this.
+ */
 class Ware
 {
 public:

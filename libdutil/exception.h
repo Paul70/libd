@@ -13,7 +13,7 @@ namespace DUTIL {
 class Exception : public std::runtime_error
 {
 public:
-    explicit Exception(std::string const& message);
+    explicit Exception(std::string const &message);
 };
 } // namespace DUTIL
 
@@ -31,12 +31,13 @@ public:
 
 //! Easy to use exception
 #define D_THROW(message) \
-    throw DUTIL::Exception(std::string("error happend in ") + D_GET_FUNCTION_NAME() + std::string(" ") + message)
+    throw DUTIL::Exception(std::string("error happend in ") + D_GET_FUNCTION_NAME() \
+                           + std::string(" ") + message)
 
 //! Define easy to use custom assert macros
 #ifdef D_DEBUG
 #define D_ASSERT_MSG(condition, message) assert(((void) message, condition))
-#define D_ASSERT(condition) assert(condtion)
+#define D_ASSERT(condition) assert(condition)
 #else
 #define D_ASSERT_MSG(condition, message) ((void) 0)
 #define D_ASSERT(condition) ((void) 0)

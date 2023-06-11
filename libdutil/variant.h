@@ -1,7 +1,6 @@
 #ifndef DUTIL_VARIANT_H
 #define DUTIL_VARIANT_H
 #include "basictypes.h"
-#include "exception.h"
 #include "namedenum.h"
 #include "utility.h"
 #include <string>
@@ -61,9 +60,7 @@ public:
     //! Constructor with initial value for variant and type.
     template<typename InitialType,
              std::enable_if_t<VariantDetail::is_allowed_type_v<InitialType>, bool> = true>
-    explicit Variant(InitialType const value) :
-        var_(value),
-        type_()
+    explicit Variant(InitialType const value) : var_(value), type_()
     {
         if constexpr (std::is_same_v<InitialType, std::int64_t>)
             type_ = Type::INT64;
@@ -100,9 +97,8 @@ public:
                                    arg *= -1;
                                }
                            }
-                           if constexpr (std::is_arithmetic_v<T>) { // both types T and
-                                                                    // VariantType are
-                                                                    // arithmetic
+                           if constexpr (std::is_arithmetic_v<T>) {
+                               // both types T and VariantType are arithmetic
                                result.first = std::is_convertible_v<VariantType, T>;
                                if (result.first) {
                                    result.second = static_cast<T>(arg);

@@ -1,6 +1,6 @@
 #include "globals.h"
 
-using namespace DGLOBALS;
+namespace DGLOBALS {
 
 std::shared_ptr<ConcreteClassMapType> getConcreteClassMap()
 {
@@ -13,3 +13,4 @@ std::shared_ptr<InterfaceMapType> getInterfaceMap()
     static auto multmap = std::make_shared<InterfaceMapType>();
     return multmap;
 }
+} // namespace DGLOBALS

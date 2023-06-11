@@ -10,21 +10,15 @@ class NamedClass
 public:
     virtual ~NamedClass() = default;
 
-    std::string getClassName() const
-    {
-        return getClassNameImpl();
-    }
+    std::string getClassName() const { return getClassNameImpl(); }
 
-    std::string getShortClassName() const
-    {
-        return getShortClassNameImpl();
-    }
+    std::string getShortClassName() const { return getShortClassNameImpl(); }
 
 protected:
     static std::string shortenName(std::string const input)
     {
         auto pos = (input.find_last_of(':'));
-        if(pos != std::string::npos)
+        if (pos != std::string::npos)
             return input.substr(++pos, input.size());
         else
             return input;
@@ -39,18 +33,14 @@ template<typename Name>
 class NamedClassHelper : public NamedClass
 {
 public:
-    static std::string getClassName()
-    {
-        return Name::data();
-    }
+    static std::string getClassName() { return Name::data(); }
 
-    static std::string getShortClassName()
-    {
-        return NamedClass::shortenName(Name::data());
-    }
+    static std::string getShortClassName() { return NamedClass::shortenName(Name::data()); }
 
 private:
-    static_assert(*Name::data() == ':' && *(Name::data() + 1) == ':' && Name::size() > 3, "Class name identifier must follow the pattern \"::Organisation::Project::ClassName\" ");
+    static_assert(
+        *Name::data() == ':' && *(Name::data() + 1) == ':' && Name::size() > 3,
+        "Class name identifier must follow the pattern \"::Organisation::Project::ClassName\" ");
 
     virtual std::string getClassNameImpl() const override final
     {

@@ -35,5 +35,8 @@ target_sources(dutil PRIVATE
     ${dutil_SOURCES}
 )
 
-target_include_directories(dutil PRIVATE .. ../.. )
+target_include_directories(dutil PRIVATE
+    ..
+    ../..
+)
 target_link_libraries(dutil PUBLIC dglobals)

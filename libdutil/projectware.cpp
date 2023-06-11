@@ -2,7 +2,4 @@
 #include <iostream>
 using namespace DUTIL;
 
-void ProjectWare::doSomething()
-{
-    std::cout << "doSometing" << std::endl;
-}
+D_DEFINE_FACTORYINTERFACE(::DUTIL::ProjectWare);
