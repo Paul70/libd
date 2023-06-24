@@ -1,6 +1,7 @@
 #include "libdutil/basictypes.h"
 #include "libdutil/variant.h"
 #include "tests/testbase.h"
+#include "tests/testdummy.h"
 #include <iostream>
 
 using namespace DUTIL;
@@ -94,6 +95,24 @@ TEST_F(VariantTests, testVariantConstructionWorksAsExpected)
         Variant v3(v2);
         EXPECT_TRUE(v2.isString());
         EXPECT_TRUE(v3.isString());
+    }
+
+    // construction of Variant holding a NamedEnum
+    {
+        using namespace LIBD;
+        using namespace TESTS;
+
+        // define a NamedEnum object.
+        TestDummy::COLOR col = TestDummy::COLOR::GREEN;
+        Variant var {col};
+        Variant var2 {TestDummy::COLOR::GREEN};
+
+        auto type = var.getType();
+        EXPECT_TRUE(type == Variant::Type::STRING);
+        type = var2.getType();
+        EXPECT_TRUE(type == Variant::Type::STRING);
+        EXPECT_EQ(var.toString(), "GREEN");
+        EXPECT_EQ(var2.toString(), "GREEN");
     }
 }
 
@@ -246,6 +265,13 @@ TEST_F(VariantTests, testGetAsWorksAsExpected)
         EXPECT_TRUE(resultC.first);
         EXPECT_TRUE(type_test);
     }
+}
+
+TEST_F(VariantTests, testToStringWorksAsExpected)
+{
+    Variant var(2.345);
+    std::string result = var.toString();
+    EXPECT_EQ("2.3450000000", result);
 }
 
 TEST_F(VariantTests, testSomethingForException)

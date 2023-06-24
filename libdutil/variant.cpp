@@ -18,7 +18,7 @@ bool Variant::isMonostate() const
     return type_ == Type::MONOSTATE;
 }
 
-bool Variant::isString()
+bool Variant::isString() const
 {
     return type_ == Type::STRING;
 }
@@ -36,4 +36,10 @@ bool Variant::isCharacter() const
 bool Variant::isBool() const
 {
     return type_ == Type::BOOL;
+}
+
+std::string Variant::toString() const
+{
+    auto result = getAs<std::string>();
+    return result.second;
 }
