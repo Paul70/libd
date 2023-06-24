@@ -7,10 +7,10 @@
 namespace DUTIL {
 namespace Utility {
 
-void replaceDecimalSeperator(char const oldSep, char const newSep, std::string& value) noexcept
+void replaceDecimalSeperator(char const oldSep, char const newSep, std::string &value) noexcept
 {
     auto pos = value.find(oldSep);
-    if(pos != std::string::npos) {
+    if (pos != std::string::npos) {
         value.replace(value.begin() + pos, value.begin() + pos + 1, 1, newSep);
     }
 }
@@ -33,7 +33,7 @@ std::string integerToString(std::int64_t value) noexcept
 
 std::string doubleToString(double value, int precision) noexcept
 {
-    if(precision > 20) {
+    if (precision > 20) {
         precision = 20;
         // hier eine log meldung
     }
@@ -44,10 +44,32 @@ std::string doubleToString(double value, int precision) noexcept
     return num;
 }
 
-StringList split(std::string const& str, char const seperator, bool removeWS)
+void trimThis(std::string &str)
+{
+    while (!str.empty() && std::isspace(str[0])) {
+        str.erase(str.begin());
+    }
+    while (!str.empty() && std::isspace(str[str.size() - 1])) {
+        str.pop_back();
+    }
+}
+
+std::string trimMove(std::string &&str)
+{
+    trimThis(str);
+    return std::move(str);
+}
+
+std::string trim(std::string str)
+{
+    trimThis(str); // be careful, trimThis gets a local reference.
+    return str;
+}
+
+StringList split(std::string const &str, char const seperator, bool removeWS)
 {
     size_t next = str.find(seperator, 0);
-    if(next == std::string::npos) {
+    if (next == std::string::npos) {
         return StringList();
     }
 
@@ -58,15 +80,10 @@ StringList split(std::string const& str, char const seperator, bool removeWS)
         list.push_back(str.substr(last, next - last));
         last = ++next;
         next = str.find(seperator, next);
-        if(removeWS) {
-            while(list.back().back() == ' ') {
-                list.back().pop_back();
-            }
-            while(list.back().front() == ' ') {
-                list.back().erase(list.back().begin());
-            }
+        if (removeWS) {
+            trimThis(list.back());
         }
-    } while(last != 0);
+    } while (last != 0);
     return list;
 }
 

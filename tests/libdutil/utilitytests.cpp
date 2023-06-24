@@ -86,6 +86,18 @@ TEST_F(UtilityTests, testStringToArithmeticWorksAsExpedted)
     D_EXPECT_THROW(stringToArithmetic<double>(str), "stod");
 }
 
+TEST_F(UtilityTests, testTrimStringWorksAsExpected)
+{
+    std::string str("   Im Westen nichts Neues     ");
+    auto s1 = trim(str);
+    EXPECT_EQ("Im Westen nichts Neues", s1);
+    trimThis(str);
+    EXPECT_EQ("Im Westen nichts Neues", str);
+    std::string str2 = "     Hallo";
+    s1 = trimMove(std::move(str2));
+    EXPECT_EQ("Hallo", s1);
+}
+
 TEST_F(UtilityTests, testSplitWorksAsExpected)
 {
     std::string str("Im Westen nichts Neues");
