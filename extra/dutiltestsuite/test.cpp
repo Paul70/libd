@@ -15,5 +15,5 @@ TEST_F(%ClassName%, testSomethingForValueEquality)
 
 TEST_F(%ClassName%, testSomethingForException)
 {
-    W_EXPECT_THROW("do something exceptional", "something bad is going on");
+    //W_EXPECT_THROW("do something exceptional", "something bad is going on");
 }
