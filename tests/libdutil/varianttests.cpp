@@ -47,6 +47,16 @@ TEST_F(VariantTests, testVariantConstructionWorksAsExpected)
         EXPECT_FALSE(var_neg.isCharacter());
         EXPECT_FALSE(var_neg.isBool());
     }
+    // construct of int alias DUTIL::label_t variant
+    {
+        Variant var(label_t(1234567));
+        EXPECT_FALSE(var.isString());
+        EXPECT_FALSE(var.isCharacter());
+        EXPECT_FALSE(var.isBool());
+        EXPECT_FALSE(var.isMonostate());
+        EXPECT_TRUE(var.isNumeric());
+    }
+
     // construction of std::uint64_t variant
     {
         Variant var(std::uint64_t(123));
@@ -58,8 +68,9 @@ TEST_F(VariantTests, testVariantConstructionWorksAsExpected)
     }
     // construction of double variant
     {
-        Variant var(std::int64_t(123.456));
-        Variant var_neg(std::int64_t(123.456));
+        Variant var(123.456);
+        Variant var_neg(123.456);
+        Variant var_real(real_t(1234.56789));
         EXPECT_FALSE(var.isMonostate());
         EXPECT_FALSE(var.isString());
         EXPECT_TRUE(var.isNumeric());
@@ -70,6 +81,11 @@ TEST_F(VariantTests, testVariantConstructionWorksAsExpected)
         EXPECT_TRUE(var_neg.isNumeric());
         EXPECT_FALSE(var_neg.isCharacter());
         EXPECT_FALSE(var_neg.isBool());
+        EXPECT_FALSE(var_real.isMonostate());
+        EXPECT_FALSE(var_real.isString());
+        EXPECT_TRUE(var_real.isNumeric());
+        EXPECT_FALSE(var_real.isCharacter());
+        EXPECT_FALSE(var_real.isBool());
     }
     // construction of bool variant
     {
@@ -104,8 +120,8 @@ TEST_F(VariantTests, testVariantConstructionWorksAsExpected)
 
         // define a NamedEnum object.
         TestDummy::COLOR col = TestDummy::COLOR::GREEN;
-        Variant var {col};
-        Variant var2 {TestDummy::COLOR::GREEN};
+        Variant var{col};
+        Variant var2{TestDummy::COLOR::GREEN};
 
         auto type = var.getType();
         EXPECT_TRUE(type == Variant::Type::STRING);
@@ -148,6 +164,8 @@ TEST_F(VariantTests, testGetAsWorksAsExpected)
         // test for label type defined in basictyped.h
         auto resultF = var.getAs<label_t>();
         EXPECT_EQ(2, resultF.second);
+        type_test = std::is_same_v<label_t, decltype(resultF.second)>;
+        EXPECT_TRUE(type_test);
     }
 
     // Case: Variant holding std::int64_t
@@ -162,6 +180,10 @@ TEST_F(VariantTests, testGetAsWorksAsExpected)
         type_test = std::is_same_v<double, decltype(resultB.second)>;
         EXPECT_EQ(777777.0, resultB.second);
         EXPECT_TRUE(type_test);
+        auto resultB2 = var.getAs<real_t>(); // as double
+        type_test = std::is_same_v<real_t, decltype(resultB2.second)>;
+        EXPECT_EQ(777777.0, resultB2.second);
+        EXPECT_TRUE(type_test);
         auto resultC = var.getAs<bool>(); // as bool
         type_test = std::is_same_v<bool, decltype(resultC.second)>;
         EXPECT_EQ(true, resultC.second);
@@ -175,6 +197,11 @@ TEST_F(VariantTests, testGetAsWorksAsExpected)
         type_test = std::is_same_v<std::string, decltype(resultE.second)>;
         EXPECT_EQ("777777", resultE.second);
         EXPECT_TRUE(resultE.first);
+        EXPECT_TRUE(type_test);
+
+        auto resultF = var.getAs<label_t>();
+        EXPECT_EQ(777777, resultF.second);
+        type_test = std::is_same_v<label_t, decltype(resultF.second)>;
         EXPECT_TRUE(type_test);
     }
 
@@ -201,6 +228,10 @@ TEST_F(VariantTests, testGetAsWorksAsExpected)
         EXPECT_EQ("-4597", resultE.second);
         EXPECT_TRUE(resultE.first);
         EXPECT_TRUE(type_test);
+        auto resultF = var.getAs<label_t>();
+        EXPECT_EQ(-4597, resultF.second);
+        type_test = std::is_same_v<label_t, decltype(resultF.second)>;
+        EXPECT_TRUE(type_test);
     }
 
     // Case: Variant holding std::uint64_t
@@ -224,6 +255,10 @@ TEST_F(VariantTests, testGetAsWorksAsExpected)
         type_test = std::is_same_v<std::string, decltype(resultE.second)>;
         EXPECT_EQ("12345", resultE.second);
         EXPECT_TRUE(resultE.first);
+        EXPECT_TRUE(type_test);
+        auto resultF = var.getAs<label_t>();
+        EXPECT_EQ(12345, resultF.second);
+        type_test = std::is_same_v<label_t, decltype(resultF.second)>;
         EXPECT_TRUE(type_test);
     }
 
@@ -251,6 +286,10 @@ TEST_F(VariantTests, testGetAsWorksAsExpected)
         EXPECT_EQ(true, resultD.second);
         EXPECT_TRUE(resultD.first);
         EXPECT_TRUE(type_test);
+        auto resultF = var.getAs<label_t>();
+        EXPECT_EQ(1234, resultF.second);
+        type_test = std::is_same_v<label_t, decltype(resultF.second)>;
+        EXPECT_TRUE(type_test);
     }
     {
         Variant var("-1234.567");
@@ -274,7 +313,65 @@ TEST_F(VariantTests, testToStringWorksAsExpected)
     EXPECT_EQ("2.3450000000", result);
 }
 
-TEST_F(VariantTests, testSomethingForException)
+TEST_F(VariantTests, testComparisonOperatorWorksAsExpected)
 {
-    //W_EXPECT_THROW("do something exceptional", "something bad is going on");
+    Variant var1(2.345);
+    Variant var2(2.345);
+    Variant var3(123.123);
+    Variant var4("Hallo");
+    Variant var5("Hallo");
+    ASSERT_EQ(var1, var2);
+    ASSERT_EQ(var4, var5);
+    ASSERT_EQ(var2, var1);
+    ASSERT_EQ(var5, var4);
+    ASSERT_NE(var2, var3);
+    ASSERT_NE(var1, var4);
+    ASSERT_NE(var1, var5);
+    ASSERT_NE(var2, var4);
+    ASSERT_NE(var3, var4);
+    ASSERT_NE(var4, var1);
+    ASSERT_NE(var4, var3);
+}
+
+TEST_F(VariantTests, testIsValid)
+{
+    Variant v0 = Variant();
+    Variant v1(2);
+    Variant v2(2.3);
+    Variant v3("dd");
+    Variant v4('d');
+    Variant v5(true);
+    ASSERT_FALSE(v0.isValid());
+    ASSERT_TRUE(v1.isValid());
+    ASSERT_TRUE(v2.isValid());
+    ASSERT_TRUE(v3.isValid());
+    ASSERT_TRUE(v4.isValid());
+    ASSERT_TRUE(v5.isValid());
+}
+
+TEST_F(VariantTests, testConvertTo)
+{
+    Variant v(2.3);
+    v.convertTo(Variant::Type::STRING);
+    ASSERT_TRUE(v.isString());
+    auto result = v.getAs<std::string>().second;
+    Utility::trimZeros(result);
+    ASSERT_EQ("2.3", result);
+    v.convertTo(Variant::Type::LABEL);
+    ASSERT_TRUE(v.isNumeric());
+    ASSERT_EQ(2, v.getAs<label_t>().second);
+    v.convertTo(Variant::Type::DOUBLE);
+    ASSERT_TRUE(v.isNumeric());
+    auto result2 = v.getAs<real_t>().second;
+    ASSERT_EQ(2.0, result2);
+    v.convertTo(Variant::Type::BOOL);
+    ASSERT_TRUE(v.isBool());
+    ASSERT_EQ(true, v.getAs<bool>().second);
+    v.convertTo(Variant::Type::STRING);
+    ASSERT_TRUE(v.isString());
+    result = v.getAs<std::string>().second;
+    Utility::trimZeros(result);
+    ASSERT_EQ("2.0", result);
+    v.convertTo(Variant::Type::MONOSTATE);
+    ASSERT_TRUE(v.isMonostate());
 }
