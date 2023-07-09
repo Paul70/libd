@@ -1,6 +1,6 @@
-#include "tests/testbase.h"
-#include "libd/tests/testdummy.h"
 #include "libd/libdutil/constructiondata.h"
+#include "libd/tests/testdummy.h"
+#include "tests/testbase.h"
 
 using namespace DUTIL;
 
@@ -11,7 +11,9 @@ class WareTests : public TestBase
 
 TEST_F(WareTests, getConcreteClassNameWorksAsExpected)
 {
-    LIBD::TESTS::TestDummy td(LIBD::TESTS::TestDummy::COLOR::GREEN);
+    using namespace LIBD::TESTS;
+    ConstructionData cd = ConstructionData().setEnum(TestDummy::COLOR::GREEN);
+    TestDummy td(cd);
     auto strName = "::TESTS::TestDummy";
     auto strShortName = "TestDummy";
     auto name = td.getConcreteClassName();

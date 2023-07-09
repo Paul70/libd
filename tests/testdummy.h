@@ -7,7 +7,8 @@
 
 namespace DUTIL {
 struct ConstructionData;
-}
+class ConstructionValidator;
+} // namespace DUTIL
 
 namespace LIBD {
 namespace TESTS {
@@ -29,9 +30,13 @@ public:
 
     //! NamedEnum Color for test purposes.
     D_NAMED_ENUM(COLOR, RED = 5, BLUE = 10, GREEN)
+    D_NAMED_ENUM(WEEKDAY, FRIDAY, SATURDAY, SUNDAY)
+
+    //! Retrun the static ConstructionValidator object.
+    static DUTIL::ConstructionValidator const &getConstructionValidator();
 
     //! Default-construct.
-    TestDummy(COLOR color);
+    explicit TestDummy(DUTIL::ConstructionData const &cd);
 
     COLOR const &getNamedEnum() const;
 

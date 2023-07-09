@@ -7,11 +7,31 @@
 #include <string>
 
 namespace DUTIL {
+using namespace BasicTypes;
+class Ware;
+struct ConstructionData;
+class ConstructionValidator;
 
 class Factory
 {
 public:
     virtual ~Factory() = default;
+
+    /*! \brief Check construction data for the concrete class.
+     *
+     * The return string contains an error message.
+     * If everything is ok, this string is empty. If not, an exception is thrown containing the error message.
+     */
+    std::string checkCD(ConstructionData const &cd) const;
+
+    /*! \brief Return a reference to a satic ConstructionValidator object.
+     *
+     * The ConstructionValidator object is especially configuerd to check the concrete ware.
+     * Therefore, the method is non static.
+     */
+    ConstructionValidator const &getConstructionValidator() const;
+
+    std::unique_ptr<Ware> newInstance(ConstructionData const &cd) const;
 
     /*! \brief Get all currently registered concrete project class names.
      *
@@ -58,6 +78,9 @@ protected:
     static void unregisterInterfaceName(const std::string interfaceName, const std::string concreteClassName);
 
 private:
+    virtual ConstructionValidator const &getConstructionValidatorImpl() const = 0;
+    virtual std::string checkCDImpl(ConstructionData const &cd) const = 0;
+    virtual std::unique_ptr<Ware> newInstanceImpl(ConstructionData const &cd) const = 0;
     std::shared_ptr<void> factoryMap_;
     std::shared_ptr<void> interfaceMap_;
 };

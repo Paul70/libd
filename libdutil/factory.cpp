@@ -1,8 +1,25 @@
 #include "factory.h"
+#include "constructiondata.h"
 #include "exception.h"
 #include "libd/libdglobals/globals.h"
+#include "ware.h"
 
 namespace DUTIL {
+
+std::string Factory::checkCD(ConstructionData const &cd) const
+{
+    return checkCDImpl(cd);
+}
+
+ConstructionValidator const &Factory::getConstructionValidator() const
+{
+    return getConstructionValidatorImpl();
+}
+
+std::unique_ptr<Ware> Factory::newInstance(ConstructionData const &cd) const
+{
+    return newInstanceImpl(cd);
+}
 
 StringList Factory::getConcreteClasses() noexcept
 {

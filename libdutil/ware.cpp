@@ -1,18 +1,19 @@
 #include "ware.h"
+#include "exception.h"
 #include "namedclass.h"
 
 using namespace DUTIL;
 
 std::string Ware::getConcreteClassName() const
 {
-    NamedClass const* nc = dynamic_cast<NamedClass const*>(this);
-    // hier noch in assert rein falls das nicht geklappt hat und nc ein nullptr ist
+    NamedClass const *nc = dynamic_cast<NamedClass const *>(this);
+    D_ASSERT(nc);
     return nc->getClassName();
 }
 
 std::string Ware::getShortConcreteClassName() const
 {
-    NamedClass const* nc = dynamic_cast<NamedClass const*>(this);
-    // hier noch ein assert rein falls das nicht geklappt hat und nc ein nullptr ist
+    NamedClass const *nc = dynamic_cast<NamedClass const *>(this);
+    D_ASSERT(nc);
     return nc->getShortClassName();
 }
