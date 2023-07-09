@@ -1,8 +1,15 @@
 #ifndef DUTIL_NAMEDPARAMETER_H
 #define DUTIL_NAMEDPARAMETER_H
+#include "basictypes.h"
+#include "exception.h"
+#include "variant.h"
 
 namespace DUTIL {
 
+/*! \brief A "smart" parameter.
+ *
+ * Use the macro below to associate a run-time name string with a given real or label variable.
+ */
 template<typename T>
 class NamedParameterBase
 {
@@ -16,6 +23,14 @@ public:
     NamedParameterBase(T v) :
         value_(v)
     {}
+
+    //! Construct from DUTIL::Variant.
+    NamedParameterBase(Variant const &variant) :
+        value_(variant.getAs<T>().second)
+    {
+        if (!variant.getAs<T>().first)
+            D_THROW("Variant type is not convertible into named parameter type.");
+    }
 
     //! Return a copy of parameter value.
     T value() const
@@ -41,24 +56,27 @@ private:
     { \
     public: \
         using type = PARAMETER_TYPE; \
-        [[maybe_unused]] static char const* getParameterName() \
+        using DUTIL::NamedParameterBase<type>::NamedParameterBase; \
+        static char const *getParameterName() \
         { \
             return #PARAMETER_NAME; \
         } \
     };
 
-#define D_NAMED_BOOL(BOOL_NAME) D_NAMED_PARAMETER(BOOL_NAME, bool)
+#define D_NAMED_BOOL(BOOL_NAME) D_NAMED_PARAMETER(BOOL_NAME, bool);
+#define D_NAMED_LABEL(LABEL_NAME) D_NAMED_PARAMETER(LABEL_NAME, DUTIL::label_t);
+#define D_NAMED_REAL(REAL_NAME) D_NAMED_PARAMETER(REAL_NAME, DUTIL::real_t);
 
 #define D_NAMED_STRING(STRING_NAME) \
     class STRING_NAME : public DUTIL::NamedParameterBase<std::string> \
     { \
     public: \
         using type = std::string; \
-        STRING_NAME(std::string const v) : DUTIL::NamedParameterBase<std::string>(std::string(v)) \
+        using DUTIL::NamedParameterBase<type>::NamedParameterBase; \
+        STRING_NAME(char const *value) : \
+            DUTIL::NamedParameterBase<type>(value) \
         {} \
-        STRING_NAME(char const* v) : DUTIL::NamedParameterBase<std::string>(std::string(v)) \
-        {} \
-        [[maybe_unused]] static char const* getParameterName() \
+        [[maybe_unused]] static char const *getParameterName() \
         { \
             return #STRING_NAME; \
         } \
