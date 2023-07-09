@@ -2,6 +2,7 @@ set(dutil_HEADERS
     basictypes.h
     concretefactory.h
     constructiondata.h
+    constructionvalidator.h
     exception.h
     factory.h
     factoryinterface.h
@@ -9,7 +10,9 @@ set(dutil_HEADERS
     namedenum.h
     namedparameter.h
     projectware.h
+    settingrule.h
     settings.h
+    staticpointercast.h
     utility.h
     variant.h
     ware.h
@@ -18,11 +21,13 @@ set(dutil_HEADERS
 set(dutil_SOURCES
     basictypes.cpp
     constructiondata.cpp
+    constructionvalidator.cpp
     exception.cpp
     factory.cpp
     factoryinterface.cpp
     namedenum.cpp
     projectware.cpp
+    settingrule.cpp
     settings.cpp
     utility.cpp
     variant.cpp

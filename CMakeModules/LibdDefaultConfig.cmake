@@ -51,9 +51,9 @@ if(${D_TOOLCHAIN} STREQUAL "D_GCC")
     # -Werror: treat all warnings as errors
     # -O0: disable many compiler optimizations (optimization lavel 0: Reduce compilation time and make debuggind produce the expected resluts.)
     # -Wfloat-conversion: warn for implicit conversions
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wfloat-conversion -Wall -Werror -Wextra -O0")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wno-dangling-reference -Wfloat-conversion -Wall -Werror -Wextra -O0")
     # -02: turn on optimization level 2 (of 3)
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wfloat-conversion -Werror -Wall -Wextra -O2")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wno-dangling-reference -Wfloat-conversion -Werror -Wall -Wextra -O2")
 elseif(${D_TOOLCHAIN} STREQUAL "D_CLANG")
     set(D_DEFAULT_BUILD_SHARED_LIBS ON)
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wfloat-conversion -Wall -Werror -Wextra -O0")

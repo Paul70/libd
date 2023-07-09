@@ -7,10 +7,14 @@ set(libd_tests_SOURCES
     testbase.cpp
     testdummy.cpp
     libdutil/basictypestests.cpp
+    libdutil/constructiondatatests.cpp
+    libdutil/constructionvalidatortests.cpp
     libdutil/factorytests.cpp
     libdutil/namedclasstests.cpp
     libdutil/namedenumtests.cpp
     libdutil/namedparametertests.cpp
+    libdutil/settingruletests.cpp
+    libdutil/settingstests.cpp
     libdutil/utilitytests.cpp
     libdutil/varianttests.cpp
     libdutil/waretests.cpp
