@@ -16,7 +16,7 @@ TEST_F(NamedEnumTests, testConstructionWorksAsExpected)
     using namespace LIBD;
     using namespace TESTS;
 
-    ConstructionData cd;
+    ConstructionData cd = ConstructionData().setEnum(TestDummy::COLOR::GREEN);
     TestDummy td(cd);
     auto nev = td.getNamedEnum();
     EXPECT_EQ(nev, TestDummy::COLOR::GREEN);
@@ -33,7 +33,7 @@ TEST_F(NamedEnumTests, testConstructionWorksAsExpected)
     {
         TestDummy::WEEKDAY e_wd{0};
         // conversion with implicit cast
-        EXPECT_EQ((TestDummy::WEEKDAY)e_wd, TestDummy::WEEKDAY::FRIDAY);
+        EXPECT_EQ((TestDummy::WEEKDAY) e_wd, TestDummy::WEEKDAY::FRIDAY);
         // conversion with static cast
         EXPECT_EQ(static_cast<TestDummy::WEEKDAY>(e_wd), TestDummy::WEEKDAY::FRIDAY);
 
@@ -63,8 +63,8 @@ TEST_F(NamedEnumTests, testConstructionWorksAsExpected)
         EXPECT_EQ(static_cast<TestDummy::COLOR>(e_col), TestDummy::COLOR::GREEN);
 
         // construct a named enum form a variant containing a named enum
-        DUTIL::Variant var3 {e_col};
-        TestDummy::COLOR e_col2 {var3};
+        DUTIL::Variant var3{e_col};
+        TestDummy::COLOR e_col2{var3};
         EXPECT_EQ(static_cast<TestDummy::COLOR>(e_col2), TestDummy::COLOR::GREEN);
     }
 
@@ -74,12 +74,12 @@ TEST_F(NamedEnumTests, testConstructionWorksAsExpected)
         D_EXPECT_THROW(TestDummy::WEEKDAY e_wd(var), "is not registered as an enum value");
         D_EXPECT_THROW(TestDummy::WEEKDAY e_wd(100), "Attempted initialization of named enum");
     }
-
 }
 
 TEST_F(NamedEnumTests, testGetValueListWorksAsExpected)
 {
-    ConstructionData cd;
+    using namespace LIBD::TESTS;
+    ConstructionData cd = ConstructionData().setEnum(TestDummy::COLOR::GREEN);
     LIBD::TESTS::TestDummy td(cd);
     auto nev = td.getNamedEnum();
     auto colors = nev.getValueList();
@@ -124,10 +124,10 @@ TEST_F(NamedEnumTests, testGetAllowedNamesWorksAsExpected)
 
     auto names = TestDummy::COLOR::getAllowedNames();
     auto number = TestDummy::COLOR::size();
-    EXPECT_EQ(names[0],"RED");
-    EXPECT_EQ(names[1],"BLUE");
-    EXPECT_EQ(names[2],"GREEN");
-    EXPECT_EQ(number,3);
+    EXPECT_EQ(names[0], "RED");
+    EXPECT_EQ(names[1], "BLUE");
+    EXPECT_EQ(names[2], "GREEN");
+    EXPECT_EQ(number, 3);
 }
 
 TEST_F(NamedEnumTests, testPublicToStringWorksAsExpected)
@@ -135,9 +135,8 @@ TEST_F(NamedEnumTests, testPublicToStringWorksAsExpected)
     using namespace LIBD;
     using namespace TESTS;
 
-    ConstructionData cd;
+    ConstructionData cd = ConstructionData().setEnum(TestDummy::COLOR::GREEN);
     TestDummy td(cd);
     auto nev = td.getNamedEnum();
     EXPECT_EQ(nev.toString(), "GREEN");
 }
-

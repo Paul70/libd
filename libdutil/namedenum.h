@@ -158,7 +158,10 @@ public:
      * Define an implicit conversion operator which converts a NamedEnum value
      * in its underlying base type (by default, this base type is int or DUTIL::label_t).
      */
-    operator ENUM_BASE_TYPE() const { return value_; }
+    operator ENUM_BASE_TYPE() const
+    {
+        return value_;
+    }
 
     //! Return the current enum name.
     std::string toString() const
@@ -210,7 +213,10 @@ protected:
         return nameMap;
     }
 
-    static ENUM_BASE_TYPE getDefaultValue() { return getNameMap().cbegin()->first; }
+    static ENUM_BASE_TYPE getDefaultValue()
+    {
+        return getNameMap().cbegin()->first;
+    }
 
     static bool isValidValue(ENUM_BASE_TYPE key)
     {
@@ -239,6 +245,8 @@ private:
  *  - getEnumName: returns ENUM_NAME as a string.
  *  - getValueList: returns __VA_ARGS__ content as a single string.
  *  - toString: friend method to call protected NamedEnumBase::toString function.
+ *
+ * Note, the [[maybe_unused]] tag surpresses warnigns treated as errors.
  */
 #define D_NAMED_WRAPPED_ENUM(ENUM_NAME, ENUM_TYPE, ...) \
     class ENUM_NAME : public DUTIL::NamedEnumBase<ENUM_NAME, ENUM_TYPE> \
@@ -246,21 +254,21 @@ private:
     public: \
         using EnumValues = enum : ENUM_TYPE { __VA_ARGS__ }; \
         using DUTIL::NamedEnumBase<ENUM_NAME, ENUM_TYPE>::NamedEnumBase; \
-        ENUM_NAME(EnumValues value) \
-            : DUTIL::NamedEnumBase<ENUM_NAME, ENUM_TYPE>(value) \
+        ENUM_NAME(EnumValues value) : \
+            DUTIL::NamedEnumBase<ENUM_NAME, ENUM_TYPE>(value) \
         {} \
-        ENUM_NAME() \
-            : DUTIL::NamedEnumBase<ENUM_NAME, ENUM_TYPE>() \
+        ENUM_NAME() : \
+            DUTIL::NamedEnumBase<ENUM_NAME, ENUM_TYPE>() \
         {} \
         EnumValues value() const \
         { \
             return static_cast<EnumValues>(ENUM_TYPE(*this)); \
         } \
-        friend ENUM_NAME fromEnumValue(EnumValues const &value) \
+        [[maybe_unused]] friend ENUM_NAME fromEnumValue(EnumValues const &value) \
         { \
             return ENUM_NAME(value); \
         } \
-        friend std::string toString(EnumValues const &value) \
+        [[maybe_unused]] friend std::string toString(EnumValues const &value) \
         { \
             return NamedEnumBase::toString(value); \
         } \
