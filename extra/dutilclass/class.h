@@ -2,6 +2,7 @@
 #define DUTIL_%ClassName:u%_H
 
 namespace DUTIL {
+struct ConstructionData;
 
 /*! \\brief description of %ClassName%
  *

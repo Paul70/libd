@@ -2,5 +2,5 @@
 
 using namespace DUTIL;
 
-%ClassName%::%ClassName%(ConstructionData const & cd)
+%ClassName%::%ClassName%([[maybe_unused]] ConstructionData const & cd)
 {}
