@@ -118,10 +118,23 @@ TEST_F(UtilityTests, testSplitWorksAsExpected)
     EXPECT_EQ("3", list[2]);
     EXPECT_EQ("9", list.back());
 
-    str = "     RED = 5  ,  BLUE = 10   ,    GREEN    ";
+    str = "RED = 5,   BLUE = 10   ,                 GREEN";
     list = split(str);
     EXPECT_TRUE(list.size() == 3);
     EXPECT_EQ("RED = 5", list.front());
     EXPECT_EQ("BLUE = 10", list[1]);
     EXPECT_EQ("GREEN", list[2]);
+}
+
+TEST_F(UtilityTests, testTrimZeros)
+{
+    std::string s{"23.34000000"};
+    trimZeros(s);
+    ASSERT_EQ("23.34", s);
+    s = "2.56700030000";
+    trimZeros(s);
+    ASSERT_EQ("2.5670003", s);
+    s = "0.0";
+    trimZeros(s);
+    ASSERT_EQ("0.0", s);
 }

@@ -8,6 +8,7 @@
 #include <type_traits>
 
 namespace DUTIL {
+using namespace BasicTypes;
 
 /*! \brief Collection of useful functions
  *
@@ -15,26 +16,6 @@ namespace DUTIL {
  * in a general context.
  */
 namespace Utility {
-//! Type trait to identify pure integer types, i.e. int, std::int8_t, std::int16_t, std::int32_t, std::int64_t.
-template<typename T>
-struct is_integer : public std::disjunction<std::is_same<label_t, T>,
-                                            std::is_same<int, T>,
-                                            std::is_same<std::int8_t, T>,
-                                            std::is_same<std::int16_t, T>,
-                                            std::is_same<std::int32_t, T>,
-                                            std::is_same<std::int64_t, T>>
-{};
-template<typename T>
-constexpr bool is_integer_v = is_integer<T>::value;
-
-//! Type trait to identify std::string types
-template<typename T>
-struct is_string : public std::disjunction<std::is_same<char *, typename std::decay_t<T>>,
-                                           std::is_same<char const *, typename std::decay_t<T>>,
-                                           std::is_same<std::string, typename std::decay_t<T>>>
-{};
-template<typename T>
-constexpr bool is_string_v = is_string<T>::value;
 
 /*! \brief Change a decimal seperator.
  *
@@ -144,6 +125,11 @@ std::pair<bool, std::string> toString(T value)
     }
     D_ASSERT_MSG(false, "Unimplemented case!");
 }
+template<typename T>
+std::string toStr(T value)
+{
+    return toString(value).second;
+}
 
 /*! \brief Convert a std::string into the given target type T.
  *
@@ -160,8 +146,7 @@ std::pair<bool, T> fromString(std::string &value)
 {
     if constexpr (std::is_arithmetic_v<T>) {
         return std::make_pair(true, stringToArithmetic<T>(value));
-    }
-    else if constexpr(std::is_same_v<T, std::string>){
+    } else if constexpr (std::is_same_v<T, std::string>) {
         return std::make_pair(true, std::string(value));
     }
     D_ASSERT_MSG(false, "Unimplemented case!");
@@ -184,6 +169,13 @@ std::pair<bool, T> fromString(std::string &value)
 void trimThis(std::string &str);
 std::string trimMove(std::string &&str);
 std::string trim(std::string str);
+
+/*! \brief Remove trailing zero characters from a string.
+ *
+ * For example:
+ *  "2.300000000" becomes "2.3"
+ */
+void trimZeros(std::string &str);
 
 /*! \brief Split a single string into substrings.
  *

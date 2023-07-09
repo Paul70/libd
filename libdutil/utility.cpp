@@ -66,6 +66,13 @@ std::string trim(std::string str)
     return str;
 }
 
+void trimZeros(std::string &str)
+{
+    while (str.back() == '0' && *(str.end() - 2) != '.') {
+        str.pop_back();
+    }
+}
+
 StringList split(std::string const &str, char const seperator, bool removeWS)
 {
     size_t next = str.find(seperator, 0);
