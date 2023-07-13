@@ -43,7 +43,6 @@ public:
 private:
     COLOR color_;
 };
-
 } // namespace TESTS
 } // namespace LIBD
 

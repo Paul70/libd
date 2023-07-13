@@ -96,7 +96,7 @@ ConstructionValidator::ConstructionValidator(std::vector<SettingRule> settingRul
         // lambda first calls the check-function (not directly the functor) of the base construction validator.
         // In case of no errors, the custom check functor of this validator gets called.
         check_ = [=](ConstructionValidator const &cvThis, ConstructionData const &cdThis) {
-            auto errors = check_(baseCV, cdThis);
+            auto errors = baseCV.check_(cvThis, cdThis);
             if (!errors.empty())
                 return errors;
             return checkF(cvThis, cdThis);
@@ -155,11 +155,11 @@ Variant ConstructionValidator::checkSettingRuleKeyAndReturnValue(Variant const v
     }
 
     // check min/max limits
-    if (!checkASmallerThanB(sr.type, sr.minimalValue, value)) {
+    if (sr.minimalValue.isValid() && !checkASmallerThanB(sr.type, sr.minimalValue, value)) {
         error = "Setting for key '" + key + "' and value: " + value.toString() + "is smaller than the allowed min value.";
         return Variant();
     }
-    if (!checkASmallerThanB(sr.type, value, sr.maximalValue)) {
+    if (sr.minimalValue.isValid() && !checkASmallerThanB(sr.type, value, sr.maximalValue)) {
         error = "Setting for key '" + key + "' and value: " + value.toString() + "is bigger than the allowed max value.";
         return Variant();
     }
@@ -191,7 +191,8 @@ std::string ConstructionValidator::recursiveCheck(ConstructionValidator const &c
         }
     }
 
-    D_ASSERT_MSG(!errors.empty(), "At this point, error string has to be empty.");
+    if (!errors.empty())
+        D_THROW("At this point, construction validator error string has to be empty.");
     return errors;
 }
 } // namespace DUTIL
