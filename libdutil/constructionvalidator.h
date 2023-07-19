@@ -49,11 +49,21 @@ public:
     //! Return SettingRule object specified by key. If no rule is found, an exception is thrown.
     SettingRule getSettingRule(std::string const &key) const;
 
+    //! Return all setting rule keys. If there are no setting rules, the list will be empty.
+    StringList getListOfSettingRuleKeys() const;
+
     // functions for extraction
 
     template<typename NE, std::enable_if_t<std::is_enum_v<typename NE::EnumValues>, bool> = false>
-    void validateNamedEnum() const
-    {}
+    NE validateNamedEnum(ConstructionData const &cd) const
+    {
+        return NE(validateSettingRuleKeyAndReturnValue(cd, NE::getEnumName()));
+    }
+    template<typename NP>
+    NP validateNamedParameter(ConstructionData const &cd) const
+    {
+        return NP(validateSettingRuleKeyAndReturnValue(cd, NP::getParameterName()));
+    }
 
     // check functions
     template<typename NE, std::enable_if_t<std::is_enum_v<typename NE::EnumValues>, bool> = false>
@@ -65,6 +75,8 @@ public:
 private:
     Variant checkSettingRuleKeyAndReturnValue(Variant const value, std::string const &key, std::string &error) const;
     std::string checkSettingRuleKeyAndReturnErrors(ConstructionData const &cd, std::string const &key) const;
+
+    Variant validateSettingRuleKeyAndReturnValue(ConstructionData const &cd, std::string const key) const;
 
     std::map<std::string, SettingRule> settingRules_;
     CheckFunction check_;

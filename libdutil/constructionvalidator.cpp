@@ -120,6 +120,15 @@ SettingRule ConstructionValidator::getSettingRule(std::string const &key) const
     return rule->second;
 }
 
+StringList ConstructionValidator::getListOfSettingRuleKeys() const
+{
+    StringList list;
+    for (auto const &it : settingRules_) {
+        list.push_back(it.first);
+    }
+    return list;
+}
+
 Variant ConstructionValidator::checkSettingRuleKeyAndReturnValue(Variant const value,
                                                                  std::string const &key,
                                                                  std::string &error) const
@@ -131,21 +140,28 @@ Variant ConstructionValidator::checkSettingRuleKeyAndReturnValue(Variant const v
         error = "Setting rule for key '" + key + "' and value: " + value.toString() + "requires a default value.";
         return Variant();
     }
+    if (sr.usage == SettingRule::Usage::MANDATORY_NO_DEFAULT && value.isMonostate()) {
+        error = "SettingRule for key '" + key + "' requires a value offered by consruction data.";
+        return Variant();
+    }
     if (sr.usage == SettingRule::Usage::MANDATORY_NO_DEFAULT && sr.defaultValue.isValid()) {
         error = "Setting rule for key '" + key + "' and value: " + value.toString()
                 + "is mandatory and cannot rely on a default value.";
         return Variant();
     }
+    if (sr.usage == SettingRule::Usage::MANDATORY_WITH_DEFAULT && value.isMonostate()) {
+        return sr.defaultValue;
+    }
 
     // ckeck Variant type
-    if (value.getType() != sr.type) {
+    if (value.isValid() && value.getType() != sr.type) {
         error = "Setting rule for key '" + key + "' and value: " + value.toString()
                 + "defines a different type for the parameter";
         return Variant();
     }
 
     // check list of possible values
-    if (!checkPresenceInListOfAllowedValues(sr.listOfPossibleValues, value.toString())) {
+    if (!sr.listOfPossibleValues.empty() && !checkPresenceInListOfAllowedValues(sr.listOfPossibleValues, value.toString())) {
         error = "Setting rule for key '" + key + "' allows the following values: ";
         for (auto const &it : sr.listOfPossibleValues) {
             error += it + ",";
@@ -159,7 +175,7 @@ Variant ConstructionValidator::checkSettingRuleKeyAndReturnValue(Variant const v
         error = "Setting for key '" + key + "' and value: " + value.toString() + "is smaller than the allowed min value.";
         return Variant();
     }
-    if (sr.minimalValue.isValid() && !checkASmallerThanB(sr.type, value, sr.maximalValue)) {
+    if (sr.maximalValue.isValid() && !checkASmallerThanB(sr.type, value, sr.maximalValue)) {
         error = "Setting for key '" + key + "' and value: " + value.toString() + "is bigger than the allowed max value.";
         return Variant();
     }
@@ -178,6 +194,15 @@ std::string ConstructionValidator::checkSettingRuleKeyAndReturnErrors(Constructi
     std::string errors;
     checkSettingRuleKeyAndReturnValue(cd.s.value(key), key, errors);
     return errors;
+}
+
+Variant ConstructionValidator::validateSettingRuleKeyAndReturnValue(ConstructionData const &cd, std::string const key) const
+{
+    std::string error;
+    Variant value = checkSettingRuleKeyAndReturnValue(cd.s.value(key), key, error);
+    if (!error.empty())
+        D_THROW(error);
+    return value;
 }
 
 std::string ConstructionValidator::recursiveCheck(ConstructionValidator const &cv, ConstructionData const &cd)
