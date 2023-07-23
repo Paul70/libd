@@ -174,7 +174,7 @@ TEST_F(SettingsTests, testSetConcreteClassWorksAsExpected)
     using namespace LIBD::TESTS;
     ConstructionData cd = ConstructionData().setEnum(TestDummy::COLOR::GREEN);
     TestDummy td(cd);
-    Settings s = Settings().setConcreteClassParamenter<TestDummy>();
+    Settings s = Settings().setConcreteClassParameter<TestDummy>();
     ASSERT_TRUE(s.hasKey(TestDummy::Ware::Type::getParameterName()));
     auto ccp = s.getParameter<TestDummy::Ware::Type>();
     ASSERT_EQ(td.getClassName(), ccp.value());

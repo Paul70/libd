@@ -143,7 +143,7 @@ public:
      * Settings s = Settings().setConcreteClass<CONCRETE_CLASS>();
      */
     template<typename ConcreteClass>
-    Settings &setConcreteClassParamenter()
+    Settings &setConcreteClassParameter()
     {
         return setParameter<Ware::Type>(ConcreteClass::getClassName());
     }

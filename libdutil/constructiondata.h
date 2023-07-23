@@ -54,14 +54,14 @@ struct ConstructionData
     template<typename ConcreteClass>
     ConstructionData &setConcreteClassParameter() &
     {
-        s.setConcreteClassParamenter<ConcreteClass>();
+        s.setConcreteClassParameter<ConcreteClass>();
         return *this;
     }
 
     template<typename ConcreteClass>
     ConstructionData &&setConcreteClassParameter() &&
     {
-        s.setConcreteClassParamenter<ConcreteClass>();
+        s.setConcreteClassParameter<ConcreteClass>();
         return std::move(*this);
     }
 };
