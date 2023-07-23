@@ -42,12 +42,11 @@ std::set<std::string> Factory::getInterfaces() noexcept
     return setIF;
 }
 
-StringList getConcreteClassesForInterface(const std::string interfaceName) noexcept
+StringList Factory::getConcreteClassesForInterface(const std::string interfaceName) noexcept
 {
-    auto const map = DGLOBALS::getInterfaceMap();
-    auto range = map->equal_range(interfaceName);
+    auto range = DGLOBALS::getInterfaceMap()->equal_range(interfaceName);
     StringList list;
-    list.reserve(std::distance(range.first, --range.second));
+    list.reserve(std::distance(range.first, range.second));
     for (auto it = range.first; it != range.second; ++it) {
         list.emplace_back(it->second);
     }

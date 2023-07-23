@@ -40,16 +40,22 @@ public:
      */
     static StringList getConcreteClasses() noexcept;
 
+    //! Return a std::set containing all diffrent, registered interface names.
     static std::set<std::string> getInterfaces() noexcept;
 
+    //! Get a list of all concrete class types registered for a specific interface name.
     static StringList getConcreteClassesForInterface(const std::string interfaceName) noexcept;
 
+    //! Check if the specified class name is registered as a concrete factroy product.
     static bool isRegisteredConcreteClassName(const std::string className) noexcept;
 
+    //! Check if the specified interface name is registered as an interface class for a concrete class type.
     static bool isRegisteredInterface(const std::string interfaceName) noexcept;
 
+    //! Check if the combination "interfaceName - concreteClassName" is a valid entry in the interface map.
     static bool isRegisteredWithInterface(const std::string interfaceName, const std::string concreteClassName);
 
+    //! Return an (abstract) Factory class reference for the given, concrete class name.
     static Factory const &getFactoryByName(std::string const className);
 
 protected:

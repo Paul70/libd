@@ -1,8 +1,8 @@
 #ifndef LIBD_TESTS_TESTBASE_H
 #define LIBD_TESTS_TESTBASE_H
-#include <gtest/gtest.h>
-#include <gmock/gmock.h>
 #include <gmock/gmock-matchers.h>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 #include <iostream>
 
 class TestBase : public ::testing::Test
@@ -16,6 +16,10 @@ public:
      */
     ///static std::string testDataSourceDir();
 
+    static std::size_t getNumberOfRegisteredConcreteClasses() noexcept;
+    static std::size_t getNumberOfRegisteredInterfaces() noexcept;
+    static std::size_t getNumberOfConcreteClassesForInterface(std::string const &interface) noexcept;
+
 protected:
     //! Read the given file into the result string.
     //static bool slurpFile(std::string const& fileName, std::string& result);
@@ -26,11 +30,11 @@ protected:
     try { \
         statement; \
         ADD_FAILURE() << "No exception thrown."; \
-    } \
-    catch(Exception const& e) { \
+    } catch (Exception const &e) { \
         std::string error_msg = e.what(); \
-        if(error_msg.rfind(substring) == std::string::npos) { \
-            std::string str = "Unexpected exception message thrown: " + error_msg + std::string(" Expected message was: ") + #substring; \
+        if (error_msg.rfind(substring) == std::string::npos) { \
+            std::string str = "Unexpected exception message thrown: " + error_msg + std::string(" Expected message was: ") \
+                              + #substring; \
             ADD_FAILURE() << str.data(); \
         } \
         std::cout << e.what() << std::endl; \

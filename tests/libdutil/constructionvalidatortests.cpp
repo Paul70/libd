@@ -171,10 +171,6 @@ TEST_F(ConstructionValidatorTests, testConstructionWithSettingRulesAndValidation
                                  .setParamter<Zoo::Max_Visitors>(0)),
                        "is smaller than the allowed min value");
     }
-
-    // next to come
-    // factory test können jetzt geschrieben werden
-    // danach named reference
 }
 
 TEST_F(ConstructionValidatorTests, testSomethingForException)
