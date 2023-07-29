@@ -9,6 +9,7 @@ set(dutil_HEADERS
     namedclass.h
     namedenum.h
     namedparameter.h
+    namedreference.h
     projectware.h
     settingrule.h
     settings.h
