@@ -15,13 +15,7 @@ namespace TESTS {
 
 /*! \brief Concrete class for testing purposes.
  *
- * Class contains and implements libd features.
- * Tested features are:
- *  - NamedClass macro
- *  - NamedEnum macro
- *  - ConcreteFactory macro
  */
-
 class TestDummy : public DUTIL::ProjectWare, public D_NAMED_CLASS(::TESTS::TestDummy)
 {
 public:
@@ -35,9 +29,10 @@ public:
     //! Retrun the static ConstructionValidator object.
     static DUTIL::ConstructionValidator const &getConstructionValidator();
 
-    //! Default-construct.
+    //! Construct with ConstructionData
     explicit TestDummy(DUTIL::ConstructionData const &cd);
 
+    //! Return enum color.
     COLOR const &getNamedEnum() const;
 
 private:

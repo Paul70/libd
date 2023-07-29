@@ -50,7 +50,8 @@ public:
                 sr.defaultValue = Variant(8000);
                 return sr;
             }()
-        });
+        },
+        ProjectWare::getConstructionValidator());
         // clang-format on
         return cv;
     }

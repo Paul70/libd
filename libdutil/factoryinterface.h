@@ -57,8 +57,10 @@ public:
     static std::unique_ptr<BaseType> newInstanceViaTypeSetting(ConstructionData const &cd)
     {
         // Base type is at least DUTIL::ProjectWare if no other custom inheritance hierarchy was established.
-        return static_unique_ptr_cast<BaseType>(FactoryInterfaceDetail::getConcreteClassNameViaWareTypeSetting(cd),
-                                                getInterfaceName());
+        // diese function will einen unique ptr als input
+        return static_unique_ptr_cast<BaseType>(FactoryInterfaceDetail::newInstanceViaTypeSetting(cd, getInterfaceName()));
+        //        return static_unique_ptr_cast<BaseType>(FactoryInterfaceDetail::getConcreteClassNameViaWareTypeSetting(cd),
+        //                                                getInterfaceName());
     }
 
 protected:

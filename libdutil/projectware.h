@@ -6,6 +6,7 @@
 
 namespace DUTIL {
 struct ConstructionData;
+class ConstructionValidator;
 
 /*! brief description of ProjectWare
  *
@@ -15,6 +16,8 @@ struct ConstructionData;
 class ProjectWare : public Ware
 {
 public:
+    static ConstructionValidator const &getConstructionValidator();
+
     template<typename DerivedClass>
     static std::unique_ptr<DerivedClass> createNewInstanceViaFactory(ConstructionData const &cd)
     {

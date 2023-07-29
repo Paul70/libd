@@ -46,6 +46,8 @@ public:
      */
     std::string check(ConstructionData const &cd) const;
 
+    bool hasSettingRule(std::string const &key) const;
+
     //! Return SettingRule object specified by key. If no rule is found, an exception is thrown.
     SettingRule getSettingRule(std::string const &key) const;
 

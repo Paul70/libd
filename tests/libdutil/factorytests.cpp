@@ -18,9 +18,9 @@ class ConcreteWareA : public ProjectWare, public D_NAMED_CLASS(::ConcreteWareA)
 {
 public:
     // static concrete facotry memeber
-    [[maybe_unused]] D_DECLARE_PROJECTWARE(ConcreteWareA)
+    D_DECLARE_PROJECTWARE(ConcreteWareA)
 
-        static ConstructionValidator const &getConstructionValidator()
+    static ConstructionValidator const &getConstructionValidator()
     {
         static ConstructionValidator cv;
         return cv;
@@ -28,6 +28,11 @@ public:
 
     explicit ConcreteWareA([[maybe_unused]] ConstructionData const &cd)
     {}
+
+    bool doNothingAndReturnTrue() const
+    {
+        return true;
+    }
 };
 
 class ConcreteWareB : public ProjectWare, public D_NAMED_CLASS(::ConcreteWareB)
@@ -83,9 +88,12 @@ TEST_F(FactoryTests, testGetConcreteClassesAndInterfacesWorksAsExpected)
 
 TEST_F(FactoryTests, testGetFactoryByName)
 {
-    DUTIL::ConstructionData cd;
     Factory const *f = &Factory::getFactoryByName(TestDummy::getClassName());
-    std::string result = f->checkCD(cd);
+    // clang-format off
+    std::string result = f->checkCD(ConstructionData()
+                                    .setConcreteClassParameter<TestDummy>()
+                                    .setEnum<TestDummy::COLOR>(TestDummy::COLOR::GREEN));
+    // clang-format on
     ASSERT_TRUE(result.empty());
     bool type = std::is_same_v<decltype(f), Factory const *>;
     EXPECT_TRUE(type);
@@ -111,5 +119,57 @@ TEST_F(FactoryTests, testGetConcreteClassesForInterface)
     ASSERT_NE(it, list.end());
 }
 
-// was ich noch machen muss ist die Tests mit dem Testdummy so umschreiben,
-// dass sie stand alone sind
+TEST_F(FactoryTests, testCreateNewConcreteClassViaTypeSetting)
+{
+    // ConstructionData with Type setting
+    auto newPW = FactoryInterface<DUTIL::ProjectWare>::newInstanceViaTypeSetting(
+        ConstructionData().setConcreteClassParameter<ConcreteWareA>());
+    bool type = std::is_same_v<decltype(newPW), std::unique_ptr<ProjectWare>>;
+    ASSERT_TRUE(type);
+
+    auto newCwA = static_unique_ptr_cast<ConcreteWareA, ProjectWare>(std::move(newPW));
+    ASSERT_EQ(ConcreteWareA::getShortClassName(), newCwA->getShortConcreteClassName());
+    ASSERT_TRUE(newCwA->doNothingAndReturnTrue());
+    type = std::is_same_v<decltype(newCwA), std::unique_ptr<ConcreteWareA>>;
+    ASSERT_TRUE(type);
+
+    // same test for ConcreteWareB
+    newPW = FactoryInterface<DUTIL::ProjectWare>::newInstanceViaTypeSetting(
+        ConstructionData().setConcreteClassParameter<ConcreteWareB>());
+    type = std::is_same_v<decltype(newPW), std::unique_ptr<ProjectWare>>;
+    ASSERT_TRUE(type);
+
+    auto newCwB = static_unique_ptr_cast<ConcreteWareB, ProjectWare>(std::move(newPW));
+    ASSERT_EQ(ConcreteWareB::getShortClassName(), newCwB->getShortConcreteClassName());
+    type = std::is_same_v<decltype(newCwB), std::unique_ptr<ConcreteWareB>>;
+    ASSERT_TRUE(type);
+}
+
+TEST_F(FactoryTests, testCheckDuringFactoryConstructionIsOK)
+{
+    // clang-format off
+    // test is using TestDummy class
+    auto newPW = FactoryInterface<DUTIL::ProjectWare>::newInstanceViaTypeSetting(
+        ConstructionData()
+                .setConcreteClassParameter<TestDummy>()
+                .setEnum<TestDummy::COLOR>(TestDummy::COLOR::GREEN));
+    // clang-format on
+
+    bool type = std::is_same_v<decltype(newPW), std::unique_ptr<ProjectWare>>;
+    ASSERT_TRUE(type);
+
+    auto newTD = static_unique_ptr_cast<TestDummy, ProjectWare>(std::move(newPW));
+    ASSERT_EQ(newTD->getNamedEnum(), TestDummy::COLOR::GREEN);
+}
+
+TEST_F(FactoryTests, testCheckDuringFactoryConstructionFails)
+{
+    // clang-format off
+    D_EXPECT_THROW(FactoryInterface<DUTIL::ProjectWare>::newInstanceViaTypeSetting(
+        ConstructionData()
+                .setConcreteClassParameter<TestDummy>()
+                .setEnum<TestDummy::WEEKDAY>(TestDummy::WEEKDAY::SUNDAY)),
+    "error happend in std::unique_ptr<DUTIL::Ware> "
+    "DUTIL::FactoryInterfaceDetail::newInstanceViaTypeSetting(const DUTIL::ConstructionData&, std::string)");
+    // clang-format on
+}

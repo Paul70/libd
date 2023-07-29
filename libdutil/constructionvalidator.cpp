@@ -7,8 +7,13 @@ namespace DUTIL {
 namespace {
 bool checkASmallerThanB(Variant::Type type, Variant const &A, Variant const &B)
 {
+    if (A.isMonostate() || B.isMonostate()) {
+        return false;
+    }
+
     if (!Variant::isNumeric(type))
         return false;
+
     using T = Variant::Type;
     if (type == T::INT64) {
         if (A.getAs<std::int64_t>() > B.getAs<std::int64_t>())
@@ -39,21 +44,14 @@ bool checkPresenceInListOfAllowedValues(StringList const &haystack, std::string 
 
 SettingRule checkSettingRule(SettingRule sr)
 {
-    // This function checks if the SettingRule itself is valid and not if ConstructionData settings
-    // follow the setting rule.
-
-    // do not continue if the setting rule does not fulfill all
-    // requirements listed here.
-    // - SettingRule key has to be set.
-    // - a default value is set if usage == MANDATORY_WITH_DEFAULT or default value is in std::monostate if not.
-    // - if there is a non emtpy list of possible values, SettingRule::Type value has to be string.
-    // - if there is a valid min/max value, SettingRule::Type value has to be numeric and
-    //   the conversion of min/max into SettingRule::Type must be valid
-    // - the minimal value has to be smaller then the maximal value.
+    // This function checks if the SettingRule itself is valid, idependently from
+    // ConstructionData
 
     D_ASSERT(!sr.key.empty());
     D_ASSERT(sr.defaultValue.isValid() || sr.usage != SettingRule::Usage::MANDATORY_WITH_DEFAULT);
+    D_ASSERT(sr.defaultValue.isMonostate() || sr.usage != SettingRule::Usage::MANDATORY_NO_DEFAULT);
     D_ASSERT(sr.listOfPossibleValues.empty() || sr.type == Variant::Type::STRING);
+
     if (sr.minimalValue.isValid()) {
         D_ASSERT(Variant::isNumeric(sr.type));
         Variant original = sr.minimalValue;
@@ -69,10 +67,13 @@ SettingRule checkSettingRule(SettingRule sr)
         D_ASSERT(original == converted.convertTo(original.getType()));
     }
     if (sr.minimalValue.isValid() && sr.maximalValue.isValid()) {
-        D_ASSERT(checkASmallerThanB(sr.type, sr.minimalValue, sr.maximalValue));
+        D_ASSERT_MSG(checkASmallerThanB(sr.type, sr.minimalValue, sr.maximalValue),
+                     "Invalid setting rule after ckecking min and max value limits.");
     }
-    // ist hier noch nicht fertig
-    // xxx presence in list xxx
+    if (!sr.listOfPossibleValues.empty() && sr.defaultValue.isValid()) {
+        D_ASSERT_MSG(checkPresenceInListOfAllowedValues(sr.listOfPossibleValues, sr.defaultValue.toString()),
+                     "Invalid setting rule after ckecking of list of possible values.");
+    }
     return sr;
 }
 } // namespace
@@ -111,6 +112,13 @@ std::string ConstructionValidator::check(ConstructionData const &cd) const
     return check_(*this, cd);
 }
 
+bool ConstructionValidator::hasSettingRule(std::string const &key) const
+{
+    if (settingRules_.find(key) == settingRules_.end())
+        return false;
+    return true;
+}
+
 SettingRule ConstructionValidator::getSettingRule(std::string const &key) const
 {
     auto rule = settingRules_.find(key);
@@ -135,34 +143,41 @@ Variant ConstructionValidator::checkSettingRuleKeyAndReturnValue(Variant const v
 {
     auto sr = getSettingRule(key);
 
-    // check usage settings
-    if (sr.usage == SettingRule::Usage::MANDATORY_WITH_DEFAULT && sr.defaultValue.isMonostate()) {
-        error = "Setting rule for key '" + key + "' and value: " + value.toString() + "requires a default value.";
-        return Variant();
-    }
+    // clang-format off
     if (sr.usage == SettingRule::Usage::MANDATORY_NO_DEFAULT && value.isMonostate()) {
-        error = "SettingRule for key '" + key + "' requires a value offered by consruction data.";
+        error = "SettingRule for key '"
+                + key
+                + "' requires a value offered by consruction data and does not support setting a default value.";
         return Variant();
     }
     if (sr.usage == SettingRule::Usage::MANDATORY_NO_DEFAULT && sr.defaultValue.isValid()) {
-        error = "Setting rule for key '" + key + "' and value: " + value.toString()
+        error = "Setting rule for key '"
+                + key + "' and value: " + value.toString()
                 + "is mandatory and cannot rely on a default value.";
         return Variant();
     }
     if (sr.usage == SettingRule::Usage::MANDATORY_WITH_DEFAULT && value.isMonostate()) {
+        // checking the default value's validility is done before
+        // inside the checkSettingRule() function.
         return sr.defaultValue;
+    }
+    if (sr.usage == SettingRule::Usage::OPTIONAL && value.isMonostate()) {
+        // optional value is not set in ConstructionData.
+        return Variant();
     }
 
     // ckeck Variant type
-    if (value.isValid() && value.getType() != sr.type) {
+    if (value.getType() != sr.type && value.isValid()) {
         error = "Setting rule for key '" + key + "' and value: " + value.toString()
                 + "defines a different type for the parameter";
         return Variant();
     }
 
     // check list of possible values
-    if (!sr.listOfPossibleValues.empty() && !checkPresenceInListOfAllowedValues(sr.listOfPossibleValues, value.toString())) {
-        error = "Setting rule for key '" + key + "' allows the following values: ";
+    if (!sr.listOfPossibleValues.empty() && value.isValid()
+        && !checkPresenceInListOfAllowedValues(sr.listOfPossibleValues, value.toString())) {
+        error = "Setting rule for key '"
+                + key + "' allows the following values: ";
         for (auto const &it : sr.listOfPossibleValues) {
             error += it + ",";
         }
@@ -172,28 +187,41 @@ Variant ConstructionValidator::checkSettingRuleKeyAndReturnValue(Variant const v
 
     // check min/max limits
     if (sr.minimalValue.isValid() && !checkASmallerThanB(sr.type, sr.minimalValue, value)) {
-        error = "Setting for key '" + key + "' and value: " + value.toString() + "is smaller than the allowed min value.";
+        error = "Setting for key '"
+                + key + "' and value: " + value.toString()
+                + "is smaller than the allowed min value.";
         return Variant();
     }
     if (sr.maximalValue.isValid() && !checkASmallerThanB(sr.type, value, sr.maximalValue)) {
-        error = "Setting for key '" + key + "' and value: " + value.toString() + "is bigger than the allowed max value.";
+        error = "Setting for key '"
+                + key + "' and value: " + value.toString()
+                + "is bigger than the allowed max value.";
         return Variant();
     }
 
     // check max string length
     if (sr.type == Variant::Type::STRING && label_t(value.toString().size()) < sr.minimalStringLength) {
-        error = "Setting for key '" + key + "' and value: " + value.toString() + "requires a min string length of "
+        error = "Setting for key '"
+                + key + "' and value: " + value.toString()
+                + "requires a min string length of "
                 + Utility::toStr(sr.minimalStringLength) + ".";
         return Variant();
     }
+    // clang-format on
     return value;
 }
 
 std::string ConstructionValidator::checkSettingRuleKeyAndReturnErrors(ConstructionData const &cd, std::string const &key) const
 {
-    std::string errors;
-    checkSettingRuleKeyAndReturnValue(cd.s.value(key), key, errors);
-    return errors;
+    std::string error;
+    auto keyList = cd.s.keys();
+    for (auto const &cdKey : keyList) {
+        if (cd.s.value(cdKey).isValid() && !hasSettingRule(cdKey)) {
+            return error = "ConstructionData key '" + cdKey + "' does not match any SettingRule key.";
+        }
+    }
+    checkSettingRuleKeyAndReturnValue(cd.s.value(key), key, error);
+    return error;
 }
 
 Variant ConstructionValidator::validateSettingRuleKeyAndReturnValue(ConstructionData const &cd, std::string const key) const
