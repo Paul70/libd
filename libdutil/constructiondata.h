@@ -5,7 +5,7 @@
 
 namespace DUTIL {
 
-/*! brief description of ConstructionData
+/*! \brief description of ConstructionData
  *
  * Longer description of ConstructionData.
  *

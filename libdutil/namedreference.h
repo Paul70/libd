@@ -20,7 +20,7 @@ class NamedReferenceBase
 {
 public:
     using RT = ReferredType;
-    using Pointer = std::shared_ptr<RT>;
+    using Pointer = std::shared_ptr<const RT>;
 
     //! Empty default constructor.
     NamedReferenceBase() = default;
@@ -37,8 +37,6 @@ public:
         ptr_(p)
     {}
 
-    // fürs interface das ganze auch noch machen
-
     //! If the referred type is derived form DUTIL::NamedClass, this function is defined and returns the concrete class name
     //! which is also registered in the global concrete class maps (see DGLOBALS).
     template<typename ConcreteType = RT, std::enable_if_t<std::is_base_of_v<NamedClass, ConcreteType>, bool> = false>
@@ -47,10 +45,47 @@ public:
         return ConcreteType::getClassName();
     }
 
+    /*! \brief std::string conversion operator
+     *
+     * Returning the reference id by calling this std::string conversion operator:
+     *
+     *  REFERENCE_NAME r;
+     *  std::string ref_id = r; // or
+     *  std::string red_id = static_cast<std::string>(r);
+     */
+    operator std::string() const
+    {
+        return id_;
+    }
+
     //! Return a copy of the reference id.
     std::string getId() const
     {
         return id_;
+    }
+
+    /*! \brief Pointer conversion operator
+     *
+     * Returning a REFERENCE_NAME::Pointer via conversion operator:
+     *
+     *  REFERENCE_NAME r;
+     *  REFERENCE_NAME::Pointer p = r;
+     */
+    operator Pointer() const
+    {
+        return ptr_;
+    }
+
+    //! Return the pointer reference.
+    Pointer ptr() const
+    {
+        return ptr_;
+    }
+
+    //! Arrow operator for pointer like usage.
+    Pointer operator->() const
+    {
+        return ptr_;
     }
 
 private:

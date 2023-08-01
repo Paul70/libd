@@ -111,6 +111,8 @@ TEST_F(NamedEnumTests, testCheckTypeValuePair)
     EXPECT_EQ(static_cast<int>(e_wd), 0);
     TestDummy::COLOR e_col{};
     EXPECT_EQ(static_cast<int>(e_col), 5);
+
+    // to be able to code the following lines, it is necessary to have in implicit conversion operator.
     EXPECT_EQ(static_cast<int>(TestDummy::COLOR::BLUE), 10);
     EXPECT_EQ(static_cast<int>(TestDummy::WEEKDAY::SUNDAY), 2);
     EXPECT_EQ(static_cast<int>(TestDummy::WEEKDAY::SATURDAY), 1);

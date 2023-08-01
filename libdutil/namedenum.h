@@ -156,7 +156,8 @@ public:
     /*! \brief Conversion operator
      *
      * Define an implicit conversion operator which converts a NamedEnum value
-     * in its underlying base type (by default, this base type is int or DUTIL::label_t).
+     * in its underlying base type (by default, this base type is int or DUTIL::label_t, respectively).
+     * See tests for an example how to use this method.
      */
     operator ENUM_BASE_TYPE() const
     {

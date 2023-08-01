@@ -13,6 +13,7 @@ set(libd_tests_SOURCES
     libdutil/namedclasstests.cpp
     libdutil/namedenumtests.cpp
     libdutil/namedparametertests.cpp
+    libdutil/namedreferencetests.cpp
     libdutil/settingruletests.cpp
     libdutil/settingstests.cpp
     libdutil/utilitytests.cpp
