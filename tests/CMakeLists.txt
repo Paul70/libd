@@ -10,6 +10,7 @@ set(libd_tests_SOURCES
     libdutil/constructiondatatests.cpp
     libdutil/constructionvalidatortests.cpp
     libdutil/factorytests.cpp
+    libdutil/loggingtests.cpp
     libdutil/namedclasstests.cpp
     libdutil/namedenumtests.cpp
     libdutil/namedparametertests.cpp
