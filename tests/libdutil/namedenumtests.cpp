@@ -9,6 +9,8 @@ using namespace DUTIL;
 namespace {
 class NamedEnumTests : public TestBase
 {};
+D_NAMED_ENUM(States, NEWYORK, ALABAMA, CALIFORNIA, NEVADA, WOSHINGTON, FLORIDA, TEXAS)
+
 } // namespace
 
 TEST_F(NamedEnumTests, testConstructionWorksAsExpected)
@@ -82,7 +84,7 @@ TEST_F(NamedEnumTests, testGetValueListWorksAsExpected)
     ConstructionData cd = ConstructionData().setEnum(TestDummy::COLOR::GREEN);
     LIBD::TESTS::TestDummy td(cd);
     auto nev = td.getNamedEnum();
-    auto colors = nev.getValueList();
+    auto colors = nev.getArgumentsString();
     EXPECT_EQ(colors, "RED = 5, BLUE = 10, GREEN");
 }
 
@@ -129,7 +131,8 @@ TEST_F(NamedEnumTests, testGetAllowedNamesWorksAsExpected)
     EXPECT_EQ(names[0], "RED");
     EXPECT_EQ(names[1], "BLUE");
     EXPECT_EQ(names[2], "GREEN");
-    EXPECT_EQ(number, 3);
+    EXPECT_EQ(names[3], "END_ENTRY");
+    EXPECT_EQ(number, 4);
 }
 
 TEST_F(NamedEnumTests, testPublicToStringWorksAsExpected)
@@ -141,4 +144,33 @@ TEST_F(NamedEnumTests, testPublicToStringWorksAsExpected)
     TestDummy td(cd);
     auto nev = td.getNamedEnum();
     EXPECT_EQ(nev.toString(), "GREEN");
+}
+
+TEST_F(NamedEnumTests, testIterateOverEnumValues)
+{
+    using namespace LIBD;
+    using namespace TESTS;
+
+    {
+        StringList states{};
+        states.reserve(States::size());
+        for (label_t it = States::NEWYORK; it <= States::END_ENTRY; ++it) {
+            auto state = States::fromBase(it);
+            if (state.empty())
+                continue;
+            states.emplace_back(std::move(state));
+        }
+        ASSERT_TRUE(static_cast<int>(states.size()) == States::size());
+    }
+    {
+        StringList colors{};
+        colors.reserve(TestDummy::COLOR::size());
+        for (label_t it = TestDummy::COLOR::RED; it <= TestDummy::COLOR::END_ENTRY; ++it) {
+            auto color = TestDummy::COLOR::fromBase(it);
+            if (color.empty())
+                continue;
+            colors.emplace_back(std::move(color));
+        }
+        ASSERT_TRUE(static_cast<int>(colors.size()) == TestDummy::COLOR::size());
+    }
 }

@@ -102,7 +102,7 @@ ENUM_BASE_TYPE fromStringToBaseType(MapType<ENUM_BASE_TYPE> const &map, ENUM_BAS
 
 /*! \brief NamedEnum, a smart enum knowing its type name.
  *
- * This enum class offers a type-to-string realtion and vice versa, meaning that you can crate enum type values
+ * This enum class offers a type-to-string relation and vice versa, meaning that you can crate enum type values
  * from string parameters. Knowing the name of an enum type as a string lets you create enum values
  * of this type during runtime.
  *
@@ -111,6 +111,8 @@ ENUM_BASE_TYPE fromStringToBaseType(MapType<ENUM_BASE_TYPE> const &map, ENUM_BAS
  * use methods of the concrete named enum type inside the named enum base class. More precisely, CRTP allows us
  * to transfer all concrete enum values (the __VA_ARGS__ of the macro) into the base class where all the type
  * to string logic happens.
+ *
+ * Each named enum automatically has an "END_ENTRY" to be able to iterate easily over all enum type values.
  */
 
 template<typename DERIVED_ENUM_CLASS, typename ENUM_BASE_TYPE>
@@ -170,6 +172,14 @@ public:
         return NamedEnumBase::toString(value_);
     }
 
+    static std::string fromBase(ENUM_BASE_TYPE v)
+    {
+        if (isValidValue(v))
+            return toString(v);
+        else
+            return "";
+    }
+
     //! Return the number of registered enum names.
     static label_t size()
     {
@@ -201,7 +211,7 @@ protected:
 
     static void initNameMap(NamedEnumDetail::MapType<ENUM_BASE_TYPE> &map)
     {
-        NamedEnumDetail::initNameMap(map, DERIVED_ENUM_CLASS::getEnumName(), DERIVED_ENUM_CLASS::getValueList());
+        NamedEnumDetail::initNameMap(map, DERIVED_ENUM_CLASS::getEnumName(), DERIVED_ENUM_CLASS::getFullArgumentsString());
     }
 
     static NamedEnumDetail::MapType<ENUM_BASE_TYPE> &getNameMap()
@@ -240,12 +250,19 @@ private:
  * It means the same type as ENUM_TYPE does. __VA_ARGS__ is a set of alias names for possible
  * values of this type. The default type is DUTIL::label_t, see basictypes.h.
  *
+ * IMPORTANT:
+ * The macro below silently writes an additional enum entry "END_ENTRY" to the enum type declaration
+ * (containing all __VA_ARGS__). This enables us to iterate over all enum values since it is always
+ * the enum value with the highest absolut value which is of integer type by default.
+ *
  * This macro also defines several functions:
  *  - value(): casts an underlying named enum base type (e.g. int) to the actual enum type.
  *  - fromEnumValue: a friend function returning a ENUM_NAME object built from EnumValues parameter.
  *  - getEnumName: returns ENUM_NAME as a string.
- *  - getValueList: returns __VA_ARGS__ content as a single string.
+ *  - getArgumentsString(): returns __VA_ARGS__ content as a single string.
+ *  - getFullArgumentsString(): like  getArgumentsString(), but including "END_ENTRY".
  *  - toString: friend method to call protected NamedEnumBase::toString function.
+ *
  *
  * Note, the [[maybe_unused]] tag surpresses warnigns treated as errors.
  */
@@ -253,7 +270,7 @@ private:
     class ENUM_NAME : public DUTIL::NamedEnumBase<ENUM_NAME, ENUM_TYPE> \
     { \
     public: \
-        using EnumValues = enum : ENUM_TYPE { __VA_ARGS__ }; \
+        using EnumValues = enum : ENUM_TYPE { __VA_ARGS__, END_ENTRY }; \
         using DUTIL::NamedEnumBase<ENUM_NAME, ENUM_TYPE>::NamedEnumBase; \
         ENUM_NAME(EnumValues value) : \
             DUTIL::NamedEnumBase<ENUM_NAME, ENUM_TYPE>(value) \
@@ -277,9 +294,15 @@ private:
         { \
             return #ENUM_NAME; \
         } \
-        static const std::string getValueList() \
+        static const std::string getArgumentsString() \
         { \
             return #__VA_ARGS__; \
+        } \
+        static const std::string getFullArgumentsString() \
+        { \
+            std::string s1{#__VA_ARGS__}; \
+            std::string s2{", END_ENTRY"}; \
+            return s1 + s2; \
         } \
     };
 
