@@ -6,6 +6,7 @@ set(libd_tests_SOURCES
     main.cpp
     testbase.cpp
     testdummy.cpp
+    libdio/filetests.cpp
     libdutil/basictypestests.cpp
     libdutil/constructiondatatests.cpp
     libdutil/constructionvalidatortests.cpp
