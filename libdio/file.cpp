@@ -1,6 +1,4 @@
 #include "file.h"
 
-File::File()
-{
-
-}
+auto load(std::string_view)
+{}
