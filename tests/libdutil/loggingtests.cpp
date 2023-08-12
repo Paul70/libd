@@ -3,6 +3,7 @@
 #include "libdutil/loggingsource.h"
 #include "libdutil/namedclass.h"
 #include "libdutil/projectware.h"
+#include "libdutil/streamloggingsink.h"
 #include "tests/testbase.h"
 
 using namespace DUTIL;
@@ -11,14 +12,13 @@ namespace {
 class LoggingTests : public TestBase
 {};
 
-class Logger : public ProjectWare, public D_NAMED_CLASS(::Logger)
+class Logger
 {
 public:
-    D_DECLARE_PROJECTWARE(Logger)
-
+    using Sink = LoggingSource::LoggingSinkPointer;
     //! Explicit Constructor
-    explicit Logger(ConstructionData const &, LoggingSource::LoggingSinkPointer sink = nullptr) :
-        logger_(sink)
+    explicit Logger(Sink *sink = nullptr) :
+        logger_(*sink)
     {}
 
     void writeLogMessage(std::string &&msg, LoggingSink::LogLevel severity) const
@@ -60,15 +60,11 @@ private:
     LoggingSource logger_;
 };
 
-D_DEFINE_PROJECTWARE(Logger)
 } // namespace
 
 TEST_F(LoggingTests, testSomethingForValueEquality)
 {
-    ASSERT_EQ("reference value", "actual value");
-}
-
-TEST_F(LoggingTests, testSomethingForException)
-{
-    //W_EXPECT_THROW("do something exceptional", "something bad is going on");
+    Logger::Sink pSink = std::make_shared<StreamLoggingSink>(std::cout, LoggingSink::LogLevel::ERROR);
+    Logger l(&pSink);
+    l.writeTraceLogMessage("Hello World!");
 }

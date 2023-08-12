@@ -22,10 +22,10 @@ void StreamLoggingSink::enableCoutInAddition(bool flag)
 void StreamLoggingSink::acceptLogItemImpl(LogItem &&item) const
 {
     if (item.level <= level_) {
-        oStream_ << item.message;
+        oStream_ << item.time.putToStream() << '\t' << item.level.toString() << ":" << '\t' << item.message << std::endl;
 
         if (stdcout_)
-            std::cout << item.message << '\t' << item.level.toString() << ":" << '\t' << item.message << std::endl;
+            std::cout << item.time.putToStream() << '\t' << item.level.toString() << ":" << '\t' << item.message << std::endl;
     }
 }
 } // namespace DUTIL

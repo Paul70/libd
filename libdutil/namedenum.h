@@ -288,7 +288,7 @@ private:
         } \
         [[maybe_unused]] friend std::string toString(EnumValues const &value) \
         { \
-            return NamedEnumBase::toString(value); \
+            return NamedEnumBase<ENUM_NAME, ENUM_TYPE>::toString(value); \
         } \
         static const std::string getEnumName() \
         { \

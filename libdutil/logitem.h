@@ -1,7 +1,7 @@
 #ifndef DUTIL_LOGITEM_H
 #define DUTIL_LOGITEM_H
 #include "loggingsink.h"
-#include <chrono>
+#include "time.h"
 
 namespace DUTIL {
 
@@ -11,8 +11,7 @@ namespace DUTIL {
  */
 struct LogItem
 {
-    // Timestamp
-    //std::chrono::
+    Time<std::chrono::system_clock> time;
     std::string message;
     LoggingSink::LogLevel level;
 };

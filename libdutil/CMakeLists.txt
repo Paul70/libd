@@ -19,6 +19,7 @@ set(dutil_HEADERS
     settings.h
     staticpointercast.h
     streamloggingsink.h
+    time.h
     utility.h
     variant.h
     ware.h
@@ -40,6 +41,7 @@ set(dutil_SOURCES
     settingrule.cpp
     settings.cpp
     streamloggingsink.cpp
+    time.cpp
     utility.cpp
     variant.cpp
     ware.cpp
