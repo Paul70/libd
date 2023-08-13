@@ -155,7 +155,7 @@ TEST_F(NamedEnumTests, testIterateOverEnumValues)
         StringList states{};
         states.reserve(States::size());
         for (label_t it = States::NEWYORK; it <= States::END_ENTRY; ++it) {
-            auto state = States::fromBase(it);
+            auto state = States::fromBaseType(it);
             if (state.empty())
                 continue;
             states.emplace_back(std::move(state));
@@ -166,7 +166,7 @@ TEST_F(NamedEnumTests, testIterateOverEnumValues)
         StringList colors{};
         colors.reserve(TestDummy::COLOR::size());
         for (label_t it = TestDummy::COLOR::RED; it <= TestDummy::COLOR::END_ENTRY; ++it) {
-            auto color = TestDummy::COLOR::fromBase(it);
+            auto color = TestDummy::COLOR::fromBaseType(it);
             if (color.empty())
                 continue;
             colors.emplace_back(std::move(color));

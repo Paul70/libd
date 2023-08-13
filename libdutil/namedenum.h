@@ -172,7 +172,7 @@ public:
         return NamedEnumBase::toString(value_);
     }
 
-    static std::string fromBase(ENUM_BASE_TYPE v)
+    static std::string fromBaseType(ENUM_BASE_TYPE v)
     {
         if (isValidValue(v))
             return toString(v);
