@@ -62,9 +62,41 @@ private:
 
 } // namespace
 
-TEST_F(LoggingTests, testSomethingForValueEquality)
+TEST_F(LoggingTests, testStreamLogging)
 {
-    Logger::Sink pSink = std::make_shared<StreamLoggingSink>(std::cout, LoggingSink::LogLevel::ERROR);
-    Logger l(&pSink);
-    l.writeTraceLogMessage("Hello World!");
+    {
+        Logger::Sink pSink = std::make_shared<StreamLoggingSink>();
+        Logger l(&pSink);
+        l.writeLogMessage("Hello World!", LoggingSink::LogLevel::ERROR);
+    }
+    {
+        Logger::Sink pSink = std::make_shared<StreamLoggingSink>(std::cout, LoggingSink::LogLevel::TRACE);
+        Logger l(&pSink);
+        l.writeTraceLogMessage("Trace log: Hello World!");
+    }
+    {
+        Logger::Sink pSink = std::make_shared<StreamLoggingSink>(std::cout, LoggingSink::LogLevel::DEBUG);
+        Logger l(&pSink);
+        l.writeDebugLogMessage("Debug log: Hello World!");
+    }
+    {
+        Logger::Sink pSink = std::make_shared<StreamLoggingSink>(std::cout, LoggingSink::LogLevel::INFO);
+        Logger l(&pSink);
+        l.writeInfoLogMessage("INFO log: Hello World!");
+    }
+    {
+        Logger::Sink pSink = std::make_shared<StreamLoggingSink>(std::cout, LoggingSink::LogLevel::WARN);
+        Logger l(&pSink);
+        l.writeTraceLogMessage("WARNING log: Hello World!");
+    }
+    {
+        Logger::Sink pSink = std::make_shared<StreamLoggingSink>(std::cout, LoggingSink::LogLevel::ERROR);
+        Logger l(&pSink);
+        l.writeErrorLogMessage("ERROR log: Hello World!");
+    }
+    {
+        Logger::Sink pSink = std::make_shared<StreamLoggingSink>(std::cout, LoggingSink::LogLevel::FATAL);
+        Logger l(&pSink);
+        l.writeFatalLogMessage("FATAL log: Hello World!");
+    }
 }

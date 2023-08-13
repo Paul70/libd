@@ -15,10 +15,17 @@ struct LogItem;
 class StreamLoggingSink : public LoggingSink
 {
 public:
+    //! Default constructor.
+    StreamLoggingSink();
+
     //! Constructor
     explicit StreamLoggingSink(std::ostream &os, LogLevel severity = LogLevel::ERROR);
 
+    //! Enable streaming of log message to std::cout additionally to another out stream.
     void enableCoutInAddition(bool flag = true);
+
+    //! Update logging level.
+    void setLogLevel(LogLevel level);
 
 private:
     virtual void acceptLogItemImpl(LogItem &&item) const override;

@@ -33,7 +33,6 @@ set(dutil_SOURCES
     factory.cpp
     factoryinterface.cpp
     fileloggingsink.cpp
-    logitem.cpp
     loggingsink.cpp
     loggingsource.cpp
     namedenum.cpp
@@ -41,7 +40,6 @@ set(dutil_SOURCES
     settingrule.cpp
     settings.cpp
     streamloggingsink.cpp
-    time.cpp
     utility.cpp
     variant.cpp
     ware.cpp

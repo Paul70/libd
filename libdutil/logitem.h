@@ -5,9 +5,11 @@
 
 namespace DUTIL {
 
-/*! \brief description of LogItem
- *
- * Longer description of LogItem.
+/*! \brief Struct holding a log message
+ * Log message contains:
+ *  - the string message
+ *  - a time stamp
+ *  - the log severity
  */
 struct LogItem
 {

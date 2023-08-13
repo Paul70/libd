@@ -4,6 +4,12 @@
 
 namespace DUTIL {
 
+StreamLoggingSink::StreamLoggingSink() :
+    oStream_(std::cout),
+    level_(LogLevel::ERROR),
+    stdcout_(false)
+{}
+
 StreamLoggingSink::StreamLoggingSink(std::ostream &os, LogLevel severity) :
     oStream_(os),
     level_(severity),
@@ -19,13 +25,23 @@ void StreamLoggingSink::enableCoutInAddition(bool flag)
     stdcout_ = flag;
 }
 
+void StreamLoggingSink::setLogLevel(LogLevel level)
+{
+    level_ = level;
+}
+
 void StreamLoggingSink::acceptLogItemImpl(LogItem &&item) const
 {
-    if (item.level <= level_) {
-        oStream_ << item.time.putToStream() << '\t' << item.level.toString() << ":" << '\t' << item.message << std::endl;
+    if (item.level >= level_) {
+        item.time.toStream(oStream_);
+        oStream_ << '\t' << item.level.toString() << " Log"
+                 << ":" << '\t' << item.message << std::endl;
 
-        if (stdcout_)
-            std::cout << item.time.putToStream() << '\t' << item.level.toString() << ":" << '\t' << item.message << std::endl;
+        if (stdcout_) {
+            item.time.toStream(std::cout);
+            std::cout << '\t' << item.level.toString() << " Log"
+                      << ":" << '\t' << item.message << std::endl;
+        }
     }
 }
 } // namespace DUTIL

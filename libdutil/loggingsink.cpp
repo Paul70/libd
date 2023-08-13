@@ -8,6 +8,6 @@ void LoggingSink::acceptLogMessage(std::string message, LogLevel level) const
     LogItem li;
     li.message = message;
     li.level = level;
-    // hier muss noch der timestamp rein
+    li.time.now();
     acceptLogItemImpl(std::move(li));
 }

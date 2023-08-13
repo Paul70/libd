@@ -7,9 +7,9 @@
 namespace DUTIL {
 using namespace std::literals;
 
-/*! \brief description of TimePoint
+/*! \brief Time class for a more easy usage of std::chrono
+ *  and std::ctime time packages.
  *
- * Longer description of TimePoint.
  */
 
 template<typename Clock>
@@ -33,23 +33,31 @@ public:
         now_(Clock::now())
     {}
 
+    //! Update current time point to now.
     TimePoint now()
     {
         now_ = Clock::now();
         return now_;
     }
 
-    auto putToStream() const
+    //! Put the time point in a std::stream.
+    void toStream(std::ostream &os)
     {
         const std::time_t t_c = Clock::to_time_t(now_);
         switch (z_) {
         case Zone::LOCAL:
-            return std::put_time(std::localtime(&t_c), "%F %T");
+            os << std::put_time(std::localtime(&t_c), "%F %T");
+            break;
         case Zone::UTC:
-            return std::put_time(std::localtime(&t_c), "%F %T");
-        default:
-            return std::put_time(std::localtime(&t_c), "%F %T");
+            os << std::put_time(std::gmtime(&t_c), "%F %T");
+            break;
         }
+    }
+
+    //! Set a new time zone
+    void changeZone(Zone timezone)
+    {
+        z_ = timezone;
     }
 
 private:
