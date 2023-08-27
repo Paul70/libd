@@ -99,7 +99,7 @@ private:
     { \
     public: \
         using DUTIL::NamedReferenceBase<REFERRED_TYPE>::NamedReferenceBase; \
-        std::string getReferenceName() const \
+        static const std::string getReferenceName() \
         { \
             return #REFERENCE_NAME; \
         } \

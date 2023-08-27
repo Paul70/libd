@@ -84,14 +84,20 @@ ConstructionValidator::ConstructionValidator() :
 {}
 
 ConstructionValidator::ConstructionValidator(std::vector<SettingRule> settingRules,
+                                             [[maybe_unused]] std::vector<WarelistRule> warelistRules,
                                              ConstructionValidator baseCV,
                                              CheckFunction checkF) :
     settingRules_(baseCV.settingRules_),
+    warelistRules_(baseCV.warelistRules_),
     check_(baseCV.check_)
 {
     for (auto const &sr : settingRules) {
         settingRules_.emplace(sr.key, checkSettingRule(sr));
     }
+    //for (auto const &wr : warelistRules) {
+    //warelistRules.emplace(wr.key, checkSettingRule(wr));
+    //}
+
     if (checkF) {
         // assign a lambda to the check funtor
         // lambda first calls the check-function (not directly the functor) of the base construction validator.
@@ -224,6 +230,12 @@ std::string ConstructionValidator::checkSettingRuleKeyAndReturnErrors(Constructi
     return error;
 }
 
+std::string ConstructionValidator::checkSubObjectAndReturnErrors(ConstructionData const &, std::string const &) const
+{
+    std::string error;
+    return error;
+}
+
 Variant ConstructionValidator::validateSettingRuleKeyAndReturnValue(ConstructionData const &cd, std::string const key) const
 {
     std::string error;
@@ -231,6 +243,22 @@ Variant ConstructionValidator::validateSettingRuleKeyAndReturnValue(Construction
     if (!error.empty())
         D_THROW(error);
     return value;
+}
+
+ConstructionData const &ConstructionValidator::validateAndReturnSubObjectCD(ConstructionData const &cd,
+                                                                            std::string const key) const
+{
+    static const ConstructionData subObjectCD;
+    std::string error = checkSubObjectAndReturnErrors(cd, key);
+    if (!error.empty()) {
+        D_THROW(error);
+    }
+    auto result = cd.subObjectData.find(key + ConstructionData::seperator + "0");
+    if (result != cd.subObjectData.cend()) {
+        return result->second;
+    } else {
+        return subObjectCD;
+    }
 }
 
 std::string ConstructionValidator::recursiveCheck(ConstructionValidator const &cv, ConstructionData const &cd)

@@ -51,6 +51,7 @@ public:
                 return sr;
             }()
         },
+        {}, // no WarelistRules needed
         ProjectWare::getConstructionValidator());
         // clang-format on
         return cv;

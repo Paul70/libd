@@ -23,6 +23,7 @@ set(dutil_HEADERS
     utility.h
     variant.h
     ware.h
+    warelistrule.h
 )
 
 set(dutil_SOURCES
@@ -43,6 +44,7 @@ set(dutil_SOURCES
     utility.cpp
     variant.cpp
     ware.cpp
+    warelistrule.cpp
 )
 
 add_library(dutil)

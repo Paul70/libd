@@ -1,7 +1,7 @@
 #include "libdutil/constructiondata.h"
+#include "libdutil/namedreference.h"
 #include "libdutil/settings.h"
 #include "tests/testbase.h"
-#include "tests/testdummy.h"
 
 using namespace DUTIL;
 
@@ -9,7 +9,65 @@ namespace {
 class ConstructionDataTests : public TestBase
 {};
 
-D_NAMED_ENUM(WEEKDAY, FRIDAY, SATURDAY, SUNDAY);
+//! Definition of named enum type for test purposes.
+D_NAMED_ENUM(WEEKDAY, FRIDAY, SATURDAY, SUNDAY)
+
+//! Definition of classes for test purposes. Class SubSubObject only needs construction data containing settings.
+class SubSubobject
+{
+public:
+    D_NAMED_ENUM(COLOR, RED = 5, BLUE = 10, GREEN)
+    D_NAMED_STRING(Description)
+
+    explicit SubSubobject(ConstructionData const &cd) :
+        color_(cd.s.getEnum<COLOR>()),
+        descr_(cd.s.getParameter<Description>())
+    {}
+
+    COLOR getColor() const
+    {
+        return color_;
+    }
+    Description getDescription() const
+    {
+        return descr_;
+    }
+
+private:
+    COLOR color_;
+    Description descr_;
+};
+
+//! Class Subobject needs conctruction data containing a nested ConstructionData object for
+//! referenced member from type SubSubObject and containing settings.
+class Subobject
+{
+public:
+    //! Define the list of sub-subobjects needed for construction
+    D_NAMED_REFERENCE(SubSubObjectList, SubSubobject)
+    D_NAMED_STRING(Description)
+
+    explicit Subobject(ConstructionData const &cd) :
+        subsubList_(),
+        descr_(cd.s.getParameter<Description>())
+    {}
+
+    Description getDescription() const
+    {
+        return descr_;
+    }
+
+private:
+    SubSubObjectList subsubList_;
+    Description descr_;
+};
+
+class Object
+{
+public:
+private:
+};
+
 } // namespace
 
 TEST_F(ConstructionDataTests, testSetWorksAsExpected)
@@ -32,10 +90,32 @@ TEST_F(ConstructionDataTests, testSetWorksAsExpected)
 
 TEST_F(ConstructionDataTests, testConstructWithConstructionDataWorksAsExpected)
 {
-    using namespace LIBD::TESTS;
-    ConstructionData cd = ConstructionData().setEnum(TestDummy::COLOR::GREEN);
-    TestDummy td(cd);
-    ASSERT_EQ(td.getNamedEnum(), TestDummy::COLOR::GREEN);
+    // ConstructionData for SubSubObject
+    // clang-format off
+    ConstructionData cd = ConstructionData()
+                            .setEnum<SubSubobject::COLOR>(SubSubobject::COLOR::GREEN)
+                            .setParamter<SubSubobject::Description>("This is a Subsubobject");
+
+    // clang-format on
+    SubSubobject sso(cd);
+    ASSERT_EQ(sso.getColor().value(), SubSubobject::COLOR::GREEN);
+    ASSERT_EQ(sso.getDescription().value(), "This is a Subsubobject");
+}
+
+TEST_F(ConstructionDataTests, testAddSubObject)
+{
+    // ConstructionData for SubSubObject
+    // clang-format off
+    ConstructionData cd = ConstructionData()
+                            .setParamter<Subobject::Description>("This is a SubObject")
+                            .addSubObject<Subobject::SubSubObjectList>(ConstructionData()
+                                                                           .setEnum<SubSubobject::COLOR>(SubSubobject::COLOR::GREEN)
+                                                                           .setParamter<SubSubobject::Description>("This is a SubSubObject"));
+    // clang-format on
+    ConstructionData cdForSubSubObject = cd.getSubObjectCd<Subobject::SubSubObjectList>();
+    SubSubobject sso = SubSubobject(cdForSubSubObject);
+    ASSERT_EQ(sso.getColor().value(), SubSubobject::COLOR::GREEN);
+    ASSERT_EQ(sso.getDescription().value(), "This is a SubSubObject");
 }
 
 TEST_F(ConstructionDataTests, testSomethingForException)
