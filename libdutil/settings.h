@@ -140,7 +140,7 @@ public:
      *  Value: Variant holding the ConcreteClassName itsself set by D_NAMED_CLASS macro.
      *
      * Usage:
-     * Settings s = Settings().setConcreteClass<CONCRETE_CLASS>();
+     * Settings s = Settings().setConcreteClassParameter<CONCRETE_CLASS>();
      */
     template<typename ConcreteClass>
     Settings &setConcreteClassParameter()

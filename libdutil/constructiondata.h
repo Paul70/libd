@@ -19,6 +19,10 @@ namespace DUTIL {
 
 struct ConstructionData
 {
+    //! Enum type that indicates if the ConstructionData constains real data to construct a real object or
+    //! if it is just a proxy onbject needed during validation of some superior Construction data validation.
+    D_NAMED_ENUM(Usage, REAL, PROXY)
+
     //! Settings class enables a keyword - value dictionary for basic, scalar data.
     Settings s;
 
@@ -31,6 +35,11 @@ struct ConstructionData
     //! Forward a whole Settings object
     ConstructionData &set(Settings sNew) &;
     ConstructionData &&set(Settings sNew) &&;
+
+    ConstructionData(Usage u);
+    ConstructionData();
+
+    bool isProxy() const;
 
     //! Forward a NamedEnum object. Enum object is stored in Settings member.
     template<typename NE>
@@ -124,6 +133,9 @@ struct ConstructionData
 
     //! Define a seperator character used to differentiate a subobject key name and a count value.
     static constexpr char seperator = ';';
+
+private:
+    const Usage usage_;
 };
 
 } // namespace DUTIL

@@ -8,8 +8,6 @@
 #include <type_traits>
 
 namespace DUTIL {
-template<class T>
-struct IsInterface;
 struct ConstructionData;
 
 /*! \brief description of ConstructionValidator
@@ -31,6 +29,9 @@ public:
 
     //! Default check function for validating ConstructionData.
     static std::string recursiveCheck(ConstructionValidator const &cv, ConstructionData const &cd);
+
+    //! Define a check function which validates if the given ConstructionData referece refers to a real or a proxy object.
+    static bool proxyCheck(ConstructionData const &cd);
 
     //! Default Constructor.
     ConstructionValidator();
@@ -62,8 +63,11 @@ public:
     //! Return all setting rule keys. If there are no setting rules, the list will be empty.
     StringList getListOfSettingRuleKeys() const;
 
-    // functions for extraction
-
+    /*! \brief Extraction fucntions.
+     *
+     * These functions perform a validation before they retrun values or nested ConstructionData
+     * objects from the overall ConstructionData object.
+     */
     template<typename NE, std::enable_if_t<std::is_enum_v<typename NE::EnumValues>, bool> = false>
     NE validateNamedEnum(ConstructionData const &cd) const
     {
@@ -81,28 +85,43 @@ public:
         return NR();
     }
 
-    /*! \brief Dynamically create a subobject form nestd construction data.
+    /*! \brief Dynamically create one or more subobjects form nested construction data.
      *
+     * Construction data is validated before objects are created.
+     * See the helper function in the private section to understand how objects are built.
+     *
+     * IMPORTANT:
+     * This function may return a nullptr in case in case the input ConstructionData does not
+     * contain a nested ConstructionData object to build an optional subobject.
+     * Then, it is the job of the user of this fucntion to deal with this nullptr correctly.
      *
      */
     template<typename NR>
-    auto buildSubObject(ConstructionData const &cd)
+    auto buildSubObject(ConstructionData const &cd) const -> std::unique_ptr<typename NR::RT>
     {
-        // Note, cd refers to the overall construction data here.
-        return makeObjectHelper<NR::RT>(validateAndReturnSubObjectCD(cd, NR::getReferenceName()));
+        // Note, cd refers to the overall and not the the subobject construction data, here.
+        auto subCD = validateAndReturnSubObjectCD(cd, NR::getReferenceName());
+        if (proxyCheck(subCD)) {
+            return nullptr;
+        }
+        return makeObjectHelper<typename NR::RT>(subCD);
     }
+
+    template<typename NR>
+    void buildSubobjectList(ConstructionData const &cd) const
+    {}
 
     // check functions
     template<typename NE, std::enable_if_t<std::is_enum_v<typename NE::EnumValues>, bool> = false>
-    std::string checkNamedEnum(ConstructionData const &cd)
+    std::string checkNamedEnum(ConstructionData const &cd) const
     {
         return checkSettingRuleKeyAndReturnError(cd, NE::getEnumName());
     }
 
     template<typename NR>
-    NR checkSubObject()
+    std::string checkSubObject(ConstructionData const &cd) const
     {
-        return NR();
+        return checkSubObjectAndReturnErrors(cd, NR::getReferenceName());
     }
 
 private:

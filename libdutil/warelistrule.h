@@ -1,21 +1,57 @@
 #ifndef DUTIL_WARELISTRULE_H
 #define DUTIL_WARELISTRULE_H
+#include "basictypes.h"
+#include "namedreference.h"
+#include <functional>
 
 namespace DUTIL {
-struct ConstructionData;
+struct ConstructionValidator;
 
-/*! \brief description of WarelistRule
+/*! \brief WarelistRule: A structure holding parameters to characterize subobject
+ *  ConstructionData inside a top level ConstructionData object.
  *
- * Longer description of WarelistRule.
+ * The parameters are:
+ * - length (Type label_t aka int): defines the number of subobject CDs (within a superior CD object) which all
+ *   refer to the same type.
+ * - key (std::string): string key do identify the warelist rule within a map.
+ * - description (std::string): a descriptive string for the given warelist rule.
+ * - type (std::string): the string name of the type the warelist rule refers to.
+ * - callbackCV (std::fucntion): a fucntor containing the "getConstructionValidator()" method of the referred type.
  */
 
-class WarelistRule
+struct WarelistRule
 {
-public:
-    //! Construct with construction data
-    explicit WarelistRule(ConstructionData const & cd);
+    static ConstructionValidator const &getTrivialConstructionValidator();
 
-private:
+    D_NAMED_ENUM(Usage, MANDATORY, OPTIONAL)
+    Usage usage;
+
+    label_t length;
+    std::string key;
+    std::string description;
+    std::string type;
+    std::function<ConstructionValidator const &()> callbackCV;
+
+    //! Default initialization
+    WarelistRule();
+
+    template<typename NR>
+    static WarelistRule forSubobjectList(std::string d, label_t length = -1)
+    {
+        WarelistRule rule;
+        rule.length = length;
+        rule.description = d;
+        rule.key = NR::getReferenceName();
+        rule.type = NR::getReferredTypeName();
+        rule.callbackCV = NR::RT::getConstructionValidator;
+        return rule;
+    }
+
+    template<typename NR>
+    static WarelistRule forSubobject(std::string d)
+    {
+        return WarelistRule::forSubobjectList<NR>(d, 1);
+    }
 };
 
 } // namespace DUTIL

@@ -76,7 +76,53 @@ SettingRule checkSettingRule(SettingRule sr)
     }
     return sr;
 }
+
+WarelistRule checkWarelistRule(WarelistRule wr)
+{
+    // check that callbackCV contains a reference to the static 'getConstructionValidator' function
+
+    // lenngth has to be at least 1
+    return wr;
+}
 } // namespace
+
+std::string ConstructionValidator::recursiveCheck(ConstructionValidator const &cv, ConstructionData const &cd)
+{
+    // check all available setting rules
+    std::string errors;
+    for (auto const &iter : cv.settingRules_) {
+        errors = cv.checkSettingRuleKeyAndReturnErrors(cd, iter.first);
+        if (!errors.empty()) {
+            return errors;
+        }
+    }
+
+    // check warelist rules for each subobject in cd
+    for (auto &iter : cv.warelistRules_) {
+        WarelistRule const &wlr = iter.second;
+        // hier muss dann noch die Abfrage for shared wares rein
+        if (wlr.length == 1) {
+            errors = cv.checkSubObjectAndReturnErrors(cd, iter.first);
+        } else {
+            // do same for list
+        }
+        if (!errors.empty()) {
+            return errors;
+        }
+    }
+
+    if (!errors.empty())
+        D_THROW("At this point, construction validator error string has to be empty.");
+    return errors;
+}
+
+bool ConstructionValidator::proxyCheck(ConstructionData const &cd)
+{
+    if (cd.isProxy())
+        return true;
+    else
+        return false;
+}
 
 ConstructionValidator::ConstructionValidator() :
     settingRules_(),
@@ -84,19 +130,22 @@ ConstructionValidator::ConstructionValidator() :
 {}
 
 ConstructionValidator::ConstructionValidator(std::vector<SettingRule> settingRules,
-                                             [[maybe_unused]] std::vector<WarelistRule> warelistRules,
+                                             std::vector<WarelistRule> warelistRules,
                                              ConstructionValidator baseCV,
                                              CheckFunction checkF) :
     settingRules_(baseCV.settingRules_),
     warelistRules_(baseCV.warelistRules_),
     check_(baseCV.check_)
 {
+    // put all setting rules into the map.
     for (auto const &sr : settingRules) {
         settingRules_.emplace(sr.key, checkSettingRule(sr));
     }
-    //for (auto const &wr : warelistRules) {
-    //warelistRules.emplace(wr.key, checkSettingRule(wr));
-    //}
+
+    // put all the given warelist rules into the map
+    for (auto const &wr : warelistRules) {
+        warelistRules_.emplace(wr.key, checkWarelistRule(wr));
+    }
 
     if (checkF) {
         // assign a lambda to the check funtor
@@ -114,8 +163,12 @@ ConstructionValidator::ConstructionValidator(std::vector<SettingRule> settingRul
 std::string ConstructionValidator::check(ConstructionData const &cd) const
 {
     // Crucial step:
-    // this function gets called inside the newInstance factory function! See the lambda in the constructor.
-    return check_(*this, cd);
+    // either this callback tiggers the default check routine usding 'recursiveCheck()' or omitts
+    // the validation porcess in case a CD object is only a proxy and not used to construct a real object.
+    if (cd.isProxy())
+        return "";
+    else
+        return check_(*this, cd);
 }
 
 bool ConstructionValidator::hasSettingRule(std::string const &key) const
@@ -217,6 +270,34 @@ Variant ConstructionValidator::checkSettingRuleKeyAndReturnValue(Variant const v
     return value;
 }
 
+template<typename ListType>
+std::string checkSubobjectRecursivelyAndReturnErrors(
+    ListType const &subojects,          /*container holding all subobject CD at this level*/
+    std::string const &key,             /*key to identify the desired subobject inside the subobject container*/
+    ConstructionValidator const &subCV, /*ConstructionValidator reference to be used to validate the subobject cd*/
+    std::map<std::string, WarelistRule> const &
+        warelistRules) /*a map containing all warelist rules, use key to identify the warelist rule for the subobject cd to be validated*/
+{
+    WarelistRule wlr = warelistRules.at(key);
+    auto indexSubObj = subojects.find(key + ConstructionData::seperator + "0");
+
+    if (indexSubObj == subojects.cend()) {
+        if (wlr.usage == WarelistRule::Usage::MANDATORY) {
+            // There is no CD object for the key and the rule says this object is mandatory.
+            return "No nested construction data object available to construct given ware with key '" + key + "'.";
+        } else {
+            return "";
+        }
+    }
+
+    // the actual recusive call which triggers the whole validation process for sub-subobjects
+    std::string error = subCV.check(indexSubObj->second);
+    if (!error.empty()) {
+        return "in subobject data for '" + key + "':\n  " + error;
+    }
+    return "";
+}
+
 std::string ConstructionValidator::checkSettingRuleKeyAndReturnErrors(ConstructionData const &cd, std::string const &key) const
 {
     std::string error;
@@ -230,10 +311,23 @@ std::string ConstructionValidator::checkSettingRuleKeyAndReturnErrors(Constructi
     return error;
 }
 
-std::string ConstructionValidator::checkSubObjectAndReturnErrors(ConstructionData const &, std::string const &) const
+std::string ConstructionValidator::checkSubObjectAndReturnErrors(ConstructionData const &cd, std::string const &key) const
 {
-    std::string error;
-    return error;
+    // check if a warelistrule really exist for given key
+    if (warelistRules_.find(key) == warelistRules_.cend()) {
+        return "subobject rule with key '" + key + "is unknown.";
+    }
+
+    // check if warelistrule refers to a single object
+    auto wlr = warelistRules_.at(key);
+    if (wlr.length > 1) {
+        return "Warelistrule associated with key '" + key
+               + "' refers to a subobject list. Call 'checkSubobjectListAndReturnErrors' instead.";
+    }
+
+    // get the subobject's CV
+    auto &subobjectCV = wlr.callbackCV();
+    return checkSubobjectRecursivelyAndReturnErrors(cd.subObjectData, key, subobjectCV, warelistRules_);
 }
 
 Variant ConstructionValidator::validateSettingRuleKeyAndReturnValue(ConstructionData const &cd, std::string const key) const
@@ -248,32 +342,18 @@ Variant ConstructionValidator::validateSettingRuleKeyAndReturnValue(Construction
 ConstructionData const &ConstructionValidator::validateAndReturnSubObjectCD(ConstructionData const &cd,
                                                                             std::string const key) const
 {
-    static const ConstructionData subObjectCD;
+    static const ConstructionData subObjectCD = ConstructionData(ConstructionData::Usage::PROXY);
     std::string error = checkSubObjectAndReturnErrors(cd, key);
     if (!error.empty()) {
         D_THROW(error);
     }
+    // if no error was detected, extract nested ConstructionData structure from map.
     auto result = cd.subObjectData.find(key + ConstructionData::seperator + "0");
     if (result != cd.subObjectData.cend()) {
         return result->second;
     } else {
+        // if nothing is found return default construction data
         return subObjectCD;
     }
-}
-
-std::string ConstructionValidator::recursiveCheck(ConstructionValidator const &cv, ConstructionData const &cd)
-{
-    // check all available setting rules
-    std::string errors;
-    for (auto const &sr : cv.settingRules_) {
-        errors = cv.checkSettingRuleKeyAndReturnErrors(cd, sr.first);
-        if (!errors.empty()) {
-            return errors;
-        }
-    }
-
-    if (!errors.empty())
-        D_THROW("At this point, construction validator error string has to be empty.");
-    return errors;
 }
 } // namespace DUTIL

@@ -3,6 +3,22 @@
 
 namespace DUTIL {
 
+ConstructionData::ConstructionData() :
+    usage_(Usage::REAL)
+{}
+
+ConstructionData::ConstructionData(Usage u) :
+    usage_(u)
+{}
+
+bool ConstructionData::isProxy() const
+{
+    if (usage_ == Usage::PROXY)
+        return true;
+    else
+        return false;
+}
+
 ConstructionData &ConstructionData::set(Settings const sNew) &
 {
     s = sNew;
