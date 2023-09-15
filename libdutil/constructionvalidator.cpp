@@ -1,6 +1,7 @@
 #include "constructionvalidator.h"
 #include "constructiondata.h"
 #include "exception.h"
+#include <iostream>
 
 namespace DUTIL {
 
@@ -79,9 +80,13 @@ SettingRule checkSettingRule(SettingRule sr)
 
 WarelistRule checkWarelistRule(WarelistRule wr)
 {
-    // check that callbackCV contains a reference to the static 'getConstructionValidator' function
+    // check that callbackCV contains a reference to the static 'ConstructionValidator' function
+    std::string cbName{wr.callbackCV.target_type().name()};
+    D_ASSERT(cbName.find("ConstructionValidator") != std::string::npos);
 
     // lenngth has to be at least 1
+    D_ASSERT(wr.length > 0);
+
     return wr;
 }
 } // namespace
@@ -263,7 +268,7 @@ Variant ConstructionValidator::checkSettingRuleKeyAndReturnValue(Variant const v
         error = "Setting for key '"
                 + key + "' and value: " + value.toString()
                 + "requires a min string length of "
-                + Utility::toStr(sr.minimalStringLength) + ".";
+                + Utility::toString(sr.minimalStringLength) + ".";
         return Variant();
     }
     // clang-format on
@@ -356,4 +361,8 @@ ConstructionData const &ConstructionValidator::validateAndReturnSubObjectCD(Cons
         return subObjectCD;
     }
 }
+
+std::vector<ConstructionData const *> ConstructionValidator::validateAndReturnSubobjectCDs(ConstructionData const &cd,
+                                                                                           std::string const &key) const
+{}
 } // namespace DUTIL

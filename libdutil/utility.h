@@ -114,21 +114,16 @@ T stringToArithmetic(std::string &value)
  * 2. Other types not implemented yet
  */
 template<typename T>
-std::pair<bool, std::string> toString(T value)
+std::string toString(T value)
 {
     if constexpr (is_string_v<T>) {
-        return std::make_pair(true, value);
+        return value;
     }
     if constexpr (std::is_arithmetic_v<T>) {
-        auto result = arithmeticToString(value);
-        return std::make_pair(true, result);
+        return arithmeticToString(value);
     }
     D_ASSERT_MSG(false, "Unimplemented case!");
-}
-template<typename T>
-std::string toStr(T value)
-{
-    return toString(value).second;
+    // later, if a conversion is not possible and it is no error, this function return an empty string
 }
 
 /*! \brief Convert a std::string into the given target type T.

@@ -20,6 +20,7 @@ set(dutil_HEADERS
     staticpointercast.h
     streamloggingsink.h
     time.h
+    types.h
     utility.h
     variant.h
     ware.h

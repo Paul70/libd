@@ -2,6 +2,7 @@
 #define DUTIL_CONSTRUCTIONDATA_H
 #include "settingrule.h"
 #include "settings.h"
+#include "types.h"
 #include <memory>
 
 namespace DUTIL {
@@ -22,6 +23,9 @@ struct ConstructionData
     //! Enum type that indicates if the ConstructionData constains real data to construct a real object or
     //! if it is just a proxy onbject needed during validation of some superior Construction data validation.
     D_NAMED_ENUM(Usage, REAL, PROXY)
+
+    //! Define a seperator character used to differentiate a subobject key name and a count value.
+    static constexpr char seperator = ';';
 
     //! Settings class enables a keyword - value dictionary for basic, scalar data.
     Settings s;
@@ -130,9 +134,6 @@ struct ConstructionData
             return ConstructionData();
         return i->second;
     }
-
-    //! Define a seperator character used to differentiate a subobject key name and a count value.
-    static constexpr char seperator = ';';
 
 private:
     const Usage usage_;

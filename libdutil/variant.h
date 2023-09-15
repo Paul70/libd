@@ -161,7 +161,10 @@ public:
                                                      }
                                                      result.second = T(0);
                                                  } else { // Target type T is string and variant type is arithmetic
-                                                     result = Utility::toString(arg);
+                                                     result.second = Utility::toString(arg);
+                                                     result.first = true;
+                                                     if (result.second.empty())
+                                                         result.first = false;
                                                  }
                                              },
                                              [&result](std::string arg) { // try to convert string into arithmetic type

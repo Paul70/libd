@@ -108,8 +108,10 @@ public:
     }
 
     template<typename NR>
-    void buildSubobjectList(ConstructionData const &cd) const
-    {}
+    auto buildSubobjectList(ConstructionData const &cd) const
+    {
+        // vector of subobject cd
+    }
 
     // check functions
     template<typename NE, std::enable_if_t<std::is_enum_v<typename NE::EnumValues>, bool> = false>
@@ -146,6 +148,7 @@ private:
      */
     Variant validateSettingRuleKeyAndReturnValue(ConstructionData const &cd, std::string const key) const;
     ConstructionData const &validateAndReturnSubObjectCD(ConstructionData const &cd, std::string const key) const;
+    std::vector<ConstructionData const *> validateAndReturnSubobjectCDs(ConstructionData const &cd, std::string const &key) const;
 
     /*! \brief Helper functions.
      *

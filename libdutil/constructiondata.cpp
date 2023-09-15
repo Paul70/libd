@@ -48,13 +48,14 @@ std::string ConstructionData::createSubObjectKeyWithCounter(std::string key) con
         if (iter.first.substr(0, prefix.size()) == prefix)
             ++count;
     });
-    return prefix + Utility::toStr(count);
+    return prefix + Utility::toString(count);
 }
 
 std::map<std::string, ConstructionData>::const_iterator ConstructionData::getSubObjectWithCounter(std::string key,
                                                                                                   label_t index) const
 {
-    return std::map<std::string, ConstructionData>::const_iterator() = subObjectData.find(key + seperator + Utility::toStr(index));
+    return std::map<std::string, ConstructionData>::const_iterator() = subObjectData.find(key + seperator
+                                                                                          + Utility::toString(index));
 }
 
 } // namespace DUTIL
