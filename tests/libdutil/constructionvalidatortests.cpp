@@ -1,3 +1,4 @@
+#include "libdutil/concretefactory.h"
 #include "libdutil/constructiondata.h"
 #include "libdutil/constructionvalidator.h"
 #include "libdutil/namedclass.h"
@@ -9,11 +10,11 @@
 using namespace DUTIL;
 
 namespace {
-class ConstructionValidatorTests : public TestBase
-{};
-class Tiger : public DUTIL::ProjectWare, public D_NAMED_CLASS(::TESTS::Tiger)
+class Cat : public DUTIL::ProjectWare
 {
 public:
+    D_NAMED_ENUM(Type, TIGER, LION, JAGUAR, LUX)
+
     D_NAMED_STRING(Name)
     D_NAMED_PARAMETER(Age, label_t)
 
@@ -23,10 +24,10 @@ public:
         // clang-format off
         static ConstructionValidator cv({
             [](){
-              return SR::forNamedParameter<Tiger::Name>(SR::Usage::MANDATORY_NO_DEFAULT, "The unique name of this tiger.");
+              return SR::forNamedParameter<Cat::Name>(SR::Usage::MANDATORY_NO_DEFAULT, "The unique name of this tiger.");
             }(),
             [](){
-              return SR::forNamedParameter<Tiger::Age>(SR::Usage::MANDATORY_NO_DEFAULT, "The current age of this tiger.");
+              return SR::forNamedParameter<Cat::Age>(SR::Usage::MANDATORY_NO_DEFAULT, "The current age of this tiger.");
             }()
             },
             {}, // empty warelist rules map
@@ -35,19 +36,87 @@ public:
         return cv;
     }
 
-    explicit Tiger(ConstructionData const &cd) :
+    explicit Cat(ConstructionData const &cd) :
         name_(getConstructionValidator().validateNamedParameter<Name>(cd)),
         age_(getConstructionValidator().validateNamedParameter<Age>(cd))
     {}
+
+    Cat::Type getType() const
+    {
+        return getTypeImpl();
+    }
 
     Name getName() const
     {
         return name_;
     }
 
+    Age getAge() const
+    {
+        return age_;
+    }
+
 private:
+    virtual Cat::Type getTypeImpl() const = 0;
+
     const Name name_;
     Age age_;
+};
+} // namespace
+
+D_DECLARE_FACTORYINTERFACE(::Cat)
+D_DEFINE_FACTORYINTERFACE(::Cat)
+
+#define D_DECLARE_CAT(REGISTERED_CLASS) static const DUTIL::ConcreteFactory<REGISTERED_CLASS, Cat> factory;
+
+#define D_DEFINE_CAT(REGISTERED_CLASS) const DUTIL::ConcreteFactory<REGISTERED_CLASS, Cat> REGISTERED_CLASS::factory;
+
+namespace {
+class ConstructionValidatorTests : public TestBase
+{};
+
+class Unicorn : public DUTIL::ProjectWare, public D_NAMED_CLASS(::TESTS::Unicorn)
+{
+    // for a single named reference of zoo class
+};
+
+class Tiger : public Cat, public D_NAMED_CLASS(::TESTS::Tiger)
+{
+public:
+    D_DECLARE_CAT(Tiger)
+
+    D_NAMED_ENUM(Species, AMUR, INDIAN, BENGAL)
+
+    static ConstructionValidator const &getConstructionValidator()
+    {
+        using SR = SettingRule;
+        // clang-format off
+        static ConstructionValidator cv({
+            [](){
+                SR sr = SR::forNamedEnum<Tiger::Species>(SR::Usage::MANDATORY_WITH_DEFAULT, "The species of this tiger.");
+                sr.defaultValue = Variant(Tiger::Species::AMUR);
+                return sr;
+            }()
+            },
+            {}, // empty warelist rules map
+            Cat::getConstructionValidator());
+        // clang-format on
+        return cv;
+    }
+
+    explicit Tiger(ConstructionData const &cd) :
+        Cat(cd),
+        species_(getConstructionValidator().validateNamedEnum<Tiger::Species>(cd))
+    {}
+
+private:
+    virtual Cat::Type getTypeImpl() const override
+    {
+        return type_;
+    }
+
+    const Cat::Type type_ = Cat::Type::TIGER;
+    const Species species_;
 };
 
 class Elephant : public DUTIL::ProjectWare, public D_NAMED_CLASS(::TESTS::Elephant)
@@ -87,12 +156,14 @@ class Zoo : public DUTIL::ProjectWare, public D_NAMED_CLASS(::TESTS::Zoo)
 {
 public:
     using CatMap = std::map<std::string, std::unique_ptr<Tiger>>;
+    using ElephantMap = std::map<std::string, std::unique_ptr<Elephant>>;
+
+    D_NAMED_ENUM(ClosingDay, MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY)
+
     D_NAMED_STRING(Name)
 
     D_NAMED_LABEL(Min_Visitors)
     D_NAMED_LABEL(Max_Visitors)
-
-    D_NAMED_ENUM(Cat, TIGER, LION, JAGUAR, LUX)
 
     // Define the list of tigers living in the zoo
     D_NAMED_REFERENCE(CatList, Tiger)
@@ -109,8 +180,8 @@ public:
                 return sr;
             } (),
             []() {
-                SR sr = SR::forNamedEnum<Cat>(SR::Usage::MANDATORY_WITH_DEFAULT, "The type of wildcat living in the zoo.");
-                sr.defaultValue = Variant(Cat::LION);
+                SR sr = SR::forNamedEnum<ClosingDay>(SR::Usage::MANDATORY_WITH_DEFAULT, "The zoo's rest day.");
+                sr.defaultValue = Variant(Zoo::ClosingDay::MONDAY);
                 return sr;
             }(),
             []() {
@@ -139,8 +210,8 @@ public:
     }
 
     explicit Zoo(DUTIL::ConstructionData const &cd) :
-        cat_(getConstructionValidator().validateNamedEnum<Cat>(cd)),
         name_(getConstructionValidator().validateNamedParameter<Name>(cd)),
+        off_(getConstructionValidator().validateNamedEnum<Zoo::ClosingDay>(cd)),
         min_(getConstructionValidator().validateNamedParameter<Min_Visitors>(cd)),
         max_(getConstructionValidator().validateNamedParameter<Max_Visitors>(cd))
     {
@@ -148,11 +219,8 @@ public:
         if (cat) {
             catmap_.emplace(cat->getName().value(), std::move(cat));
         }
-    }
 
-    Cat getCatType() const
-    {
-        return cat_;
+        //auto elepahantList = getConstructionValidator().buildSubobjectList()
     }
 
     bool findTiger(std::string name) const
@@ -178,13 +246,21 @@ public:
         return max_;
     }
 
+    ClosingDay getOffDay() const
+    {
+        return off_;
+    }
+
 private:
     CatMap catmap_;
-    Cat cat_;
+    ElephantMap elephantMap_;
     Name name_;
+    ClosingDay off_;
     Min_Visitors min_;
     Max_Visitors max_;
 };
+
+D_DEFINE_CAT(Tiger)
 
 } // namespace
 
@@ -199,17 +275,17 @@ TEST_F(ConstructionValidatorTests, testDefaultConstruction)
 TEST_F(ConstructionValidatorTests, testConstructionWithSettingRulesAndValidation)
 {
     {
-        ConstructionData cd = ConstructionData().setEnum<Zoo::Cat>(Zoo::Cat::JAGUAR);
+        ConstructionData cd = ConstructionData().setEnum<Zoo::ClosingDay>(Zoo::ClosingDay::TUESDAY);
         cd.s.setParameter<Zoo::Name>("Hellabrunn");
         auto cv = Zoo::getConstructionValidator();
         auto validationError = cv.check(cd);
         ASSERT_TRUE(validationError.empty());
         Zoo z = Zoo(cd);
-        ASSERT_TRUE(z.getCatType() == Zoo::Cat::JAGUAR);
+        ASSERT_TRUE(z.getOffDay() == Zoo::ClosingDay::TUESDAY);
     }
     {
         // zoo name not in list of possible values
-        ConstructionData cd = ConstructionData().setEnum<Zoo::Cat>(Zoo::Cat::JAGUAR);
+        ConstructionData cd = ConstructionData().setEnum<Zoo::ClosingDay>(Zoo::ClosingDay::TUESDAY);
         cd.s.setParameter<Zoo::Name>("Paul's Zoo");
         auto cv = Zoo::getConstructionValidator();
         auto validationError = cv.check(cd);
@@ -223,47 +299,48 @@ TEST_F(ConstructionValidatorTests, testConstructionWithSettingRulesAndValidation
         auto validationError = cv.check(cd);
         ASSERT_TRUE(validationError.empty());
         Zoo z = Zoo(cd);
-        ASSERT_TRUE(z.getCatType() == Zoo::Cat::LION);
+        ASSERT_TRUE(z.getOffDay() == Zoo::ClosingDay::MONDAY);
+        ASSERT_TRUE(z.getName().value() == "Wilhelma");
     }
     {
         // min and max visitor numbers within the limits
         Zoo z(ConstructionData()
-                  .setEnum<Zoo::Cat>(Zoo::Cat::TIGER)
+                  .setEnum<Zoo::ClosingDay>(Zoo::ClosingDay::FRIDAY)
                   .setParamter<Zoo::Name>("Hellabrunn")
                   .setParamter<Zoo::Min_Visitors>(50)
                   .setParamter<Zoo::Max_Visitors>(1000));
         ASSERT_TRUE(z.getName().value() == "Hellabrunn");
-        ASSERT_TRUE(z.getCatType() == Zoo::Cat::TIGER);
+        ASSERT_TRUE(z.getOffDay() == Zoo::ClosingDay::FRIDAY);
         ASSERT_TRUE(z.getMinVisitors() == 50);
         ASSERT_TRUE(z.getMaxVisitors() == 1000);
     }
     {
         // min and max visitor numbers within the limits
-        Zoo z(ConstructionData().setEnum<Zoo::Cat>(Zoo::Cat::TIGER).setParamter<Zoo::Name>("Hellabrunn"));
+        Zoo z(ConstructionData().setEnum<Zoo::ClosingDay>(Zoo::ClosingDay::SUNDAY).setParamter<Zoo::Name>("Hellabrunn"));
         ASSERT_TRUE(z.getName().value() == "Hellabrunn");
-        ASSERT_TRUE(z.getCatType() == Zoo::Cat::TIGER);
+        ASSERT_TRUE(z.getOffDay() == Zoo::ClosingDay::SUNDAY);
         ASSERT_TRUE(z.getMinVisitors() == 20);   // check default value
         ASSERT_TRUE(z.getMaxVisitors() == 8000); // check default value
     }
     {
         // min and max visitor numbers within the limits
         D_EXPECT_THROW(Zoo z(ConstructionData()
-                                 .setEnum<Zoo::Cat>(Zoo::Cat::TIGER)
+                                 .setEnum<Zoo::ClosingDay>(Zoo::ClosingDay::TUESDAY)
                                  .setParamter<Zoo::Name>("Hellabrunn")
                                  .setParamter<Zoo::Min_Visitors>(5)),
                        "is smaller than the allowed min value");
         D_EXPECT_THROW(Zoo z(ConstructionData()
-                                 .setEnum<Zoo::Cat>(Zoo::Cat::TIGER)
+                                 .setEnum<Zoo::ClosingDay>(Zoo::ClosingDay::TUESDAY)
                                  .setParamter<Zoo::Name>("Hellabrunn")
                                  .setParamter<Zoo::Min_Visitors>(50000)),
                        "is bigger than the allowed max value");
         D_EXPECT_THROW(Zoo z(ConstructionData()
-                                 .setEnum<Zoo::Cat>(Zoo::Cat::TIGER)
+                                 .setEnum<Zoo::ClosingDay>(Zoo::ClosingDay::TUESDAY)
                                  .setParamter<Zoo::Name>("Hellabrunn")
                                  .setParamter<Zoo::Max_Visitors>(50000)),
                        "is bigger than the allowed max value");
         D_EXPECT_THROW(Zoo z(ConstructionData()
-                                 .setEnum<Zoo::Cat>(Zoo::Cat::TIGER)
+                                 .setEnum<Zoo::ClosingDay>(Zoo::ClosingDay::TUESDAY)
                                  .setParamter<Zoo::Name>("Hellabrunn")
                                  .setParamter<Zoo::Max_Visitors>(0)),
                        "is smaller than the allowed min value");
@@ -274,7 +351,7 @@ TEST_F(ConstructionValidatorTests, testBuildSubobject)
 {
     // clang-format off
     Zoo z(ConstructionData()
-              .setEnum<Zoo::Cat>(Zoo::Cat::TIGER)
+              .setEnum<Zoo::ClosingDay>(Zoo::ClosingDay::TUESDAY)
               .setParamter<Zoo::Name>("Hellabrunn")
               .setParamter<Zoo::Min_Visitors>(50)
               .setParamter<Zoo::Max_Visitors>(1000)
@@ -284,6 +361,30 @@ TEST_F(ConstructionValidatorTests, testBuildSubobject)
                         .setParamter<Tiger::Age>(7))
           );
     // clang-format on
+    ASSERT_TRUE(z.getOffDay() == Zoo::ClosingDay::TUESDAY);
     auto result = z.findTiger("Tiger");
     ASSERT_TRUE(result);
+}
+
+TEST_F(ConstructionValidatorTests, testBuildSubobjectList)
+{
+    // clang-format off
+    Zoo z(ConstructionData()
+              .setEnum<Zoo::ClosingDay>(Zoo::ClosingDay::SATURDAY)
+              .setParamter<Zoo::Name>("Hellabrunn")
+              .setParamter<Zoo::Min_Visitors>(50)
+              .setParamter<Zoo::Max_Visitors>(1000)
+              .addSubObject<Zoo::CatList>(
+                    ConstructionData()
+                        .setParamter<Tiger::Name>("TigerA")
+                        .setParamter<Tiger::Age>(7))
+              .addSubObject<Zoo::CatList>(
+                    ConstructionData()
+                        .setParamter<Tiger::Name>("TigerB")
+                        .setParamter<Tiger::Age>(8))
+          );
+    // clang-format on
+
+    // building zoo with a list of tigers and elephants
+    {}
 }

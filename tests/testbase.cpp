@@ -13,7 +13,8 @@ std::size_t TestBase::getNumberOfRegisteredInterfaces() noexcept
     // concreteClassMap is a std::multimap, that is we may have many to one mapping.
     auto map = DGLOBALS::getInterfaceMap();
     size_t count = 1;
-    DGLOBALS::InterfaceMapType::const_iterator it = map->cbegin(), next = ++it;
+    DGLOBALS::InterfaceMapType::const_iterator it = map->cbegin(), next = it;
+    ++next;
     for (; next != map->cend(); ++next) {
         if ((it++)->first != (next)->first) {
             ++count;

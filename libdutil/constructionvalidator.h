@@ -110,7 +110,9 @@ public:
     template<typename NR>
     auto buildSubobjectList(ConstructionData const &cd) const
     {
-        // vector of subobject cd
+        // We need the reference name here, since the warelist rule is defined for the named reference.
+        // This function returns a vector containing all CDs.
+        auto subobjectCDs = validateAndReturnSubobjectCDs(cd, NR::getReferenceName());
     }
 
     // check functions
@@ -137,6 +139,7 @@ private:
      */
     std::string checkSettingRuleKeyAndReturnErrors(ConstructionData const &cd, std::string const &key) const;
     std::string checkSubObjectAndReturnErrors(ConstructionData const &cd, std::string const &key) const;
+    std::string checkSubObjectListAndReturnErrors(ConstructionData const &cd, std::string const &key) const;
 
     /*! \brief Validation functions.
      *

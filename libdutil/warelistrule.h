@@ -5,7 +5,7 @@
 #include <functional>
 
 namespace DUTIL {
-struct ConstructionValidator;
+class ConstructionValidator;
 
 /*! \brief WarelistRule: A structure holding parameters to characterize subobject
  *  ConstructionData inside a top level ConstructionData object.

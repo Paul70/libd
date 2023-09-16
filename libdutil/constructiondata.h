@@ -117,7 +117,7 @@ struct ConstructionData
         return std::move(*this);
     }
 
-    /*! \brief Return a stored Sub-ConstructionData object
+    /*! \brief Return a stored Subobject-ConstructionData object
      *
      * This function uses the reference name and the given index to
      * identify a ConstructionData object to build a defined subobject.
