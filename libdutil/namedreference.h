@@ -6,6 +6,10 @@
 
 namespace DUTIL {
 class NamedClass;
+template<class BaseType>
+class FactoryInterface;
+template<class T>
+struct isInterface;
 
 /*! \brief A smart reference knowing its associated id (i.e. its 'name').
  *
@@ -36,6 +40,14 @@ public:
         id_(id),
         ptr_(p)
     {}
+
+    //! If the referred type is a registered factory interface, this function is defined and returns the
+    //! corresponding class name.
+    template<typename InterfaceType = RT, std::enable_if_t<isInterface<InterfaceType>::value, bool> = false>
+    static std::string getReferredTypeName()
+    {
+        return FactoryInterface<InterfaceType>::getInterfaceName();
+    }
 
     //! If the referred type is derived form DUTIL::NamedClass, this function is defined and returns the concrete class name
     //! which is also registered in the global concrete class maps (see DGLOBALS).

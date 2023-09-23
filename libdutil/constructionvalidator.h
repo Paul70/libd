@@ -8,6 +8,10 @@
 #include <type_traits>
 
 namespace DUTIL {
+template<class BaseType>
+class FactoryInterface;
+template<class T>
+struct isInterface;
 struct ConstructionData;
 
 /*! \brief description of ConstructionValidator
@@ -21,7 +25,7 @@ public:
     //! Define a fucntion callback type for custom check functions examining ConstructionData objects.
     using CheckFunction = std::function<std::string(ConstructionValidator const &, ConstructionData const &)>;
 
-    //! A trivial ceck function for (empty) default construcion.
+    //! A trivial check function for (empty) default construction which does nothing.
     static std::string trivialCheck(ConstructionValidator const &, ConstructionData const &)
     {
         return "";
@@ -30,7 +34,9 @@ public:
     //! Default check function for validating ConstructionData.
     static std::string recursiveCheck(ConstructionValidator const &cv, ConstructionData const &cd);
 
-    //! Define a check function which validates if the given ConstructionData referece refers to a real or a proxy object.
+    static std::string typeSettingCheck(ConstructionData const &cd);
+
+    //! Check if the given CD object contains real data or is only used as proxy.
     static bool proxyCheck(ConstructionData const &cd);
 
     //! Default Constructor.
@@ -90,6 +96,9 @@ public:
      * Construction data is validated before objects are created.
      * See the helper function in the private section to understand how objects are built.
      *
+     * We need the reference name here, since the warelist rule is defined for the named
+     * reference.
+     *
      * IMPORTANT:
      * This function may return a nullptr in case in case the input ConstructionData does not
      * contain a nested ConstructionData object to build an optional subobject.
@@ -110,9 +119,16 @@ public:
     template<typename NR>
     auto buildSubobjectList(ConstructionData const &cd) const
     {
-        // We need the reference name here, since the warelist rule is defined for the named reference.
-        // This function returns a vector containing all CDs.
-        auto subobjectCDs = validateAndReturnSubobjectCDs(cd, NR::getReferenceName());
+        auto subobjectCDPtrVec = validateAndReturnSubobjectCDs(cd, NR::getReferenceName());
+        if (proxyCheck(*subobjectCDPtrVec.front())) {
+            return std::vector<std::unique_ptr<typename NR::RT>>();
+        }
+        std::vector<std::unique_ptr<typename NR::RT>> warePtrVec(subobjectCDPtrVec.size());
+        std::transform(subobjectCDPtrVec.begin(),
+                       subobjectCDPtrVec.end(),
+                       warePtrVec.begin(),
+                       [](ConstructionData const *inputCD) { return makeObjectHelper<typename NR::RT>(*inputCD); });
+        return warePtrVec;
     }
 
     // check functions
@@ -161,6 +177,12 @@ private:
     static std::unique_ptr<T> makeObjectHelper(ConstructionData const &cd)
     {
         return std::make_unique<T>(cd);
+    };
+
+    template<typename WareInterface, std::enable_if_t<isInterface<WareInterface>::value, bool> = false>
+    static std::unique_ptr<WareInterface> makeObjectHelper(ConstructionData const &cd)
+    {
+        return FactoryInterface<WareInterface>::newInstanceViaTypeSetting(cd);
     };
 
     //! Members

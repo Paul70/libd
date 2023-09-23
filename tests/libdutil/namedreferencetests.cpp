@@ -1,6 +1,8 @@
+#include "libdutil/factoryinterface.h"
 #include "libdutil/namedclass.h"
 #include "libdutil/namedreference.h"
 #include "tests/testbase.h"
+#include "tests/testdummy.h"
 
 using namespace DUTIL;
 
@@ -84,9 +86,18 @@ TEST_F(NamedReferenceTests, testFunctions)
     }
 }
 
-TEST_F(NamedReferenceTests, testGetReferredTypeName)
+TEST_F(NamedReferenceTests, testGetReferredTypeNameForConcreteType)
 {
     D_NAMED_REFERENCE(Ref, Reference)
     auto typ = Ref::getReferredTypeName();
     ASSERT_EQ(typ, Reference::getClassName());
+}
+
+TEST_F(NamedReferenceTests, testGetReferredTypeNameForInterfaceType)
+{
+    using namespace LIBD::TESTS;
+    D_NAMED_REFERENCE(TestDummyList, TestDummyInterface)
+    auto interfaceA = TestDummyList::getReferredTypeName();
+    auto interfaceB = FactoryInterface<TestDummyInterface>::getInterfaceName();
+    ASSERT_EQ(interfaceA, interfaceB);
 }

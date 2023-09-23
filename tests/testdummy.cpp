@@ -6,7 +6,7 @@ using namespace LIBD;
 using namespace TESTS;
 using namespace DUTIL;
 
-D_DEFINE_PROJECTWARE(TestDummy);
+D_DEFINE_TESTDUMMYINTERFACE(TestDummy);
 
 DUTIL::ConstructionValidator const &TestDummy::getConstructionValidator()
 {

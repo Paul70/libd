@@ -1,11 +1,13 @@
 set(libd_tests_HEADERS
     testbase.h
     testdummy.h
+    testdummyinterface.h
 )
 set(libd_tests_SOURCES
     main.cpp
     testbase.cpp
     testdummy.cpp
+    testdummyinterface.cpp
     libdutil/basictypestests.cpp
     libdutil/constructiondatatests.cpp
     libdutil/constructionvalidatortests.cpp

@@ -12,7 +12,7 @@ class ConstructionValidator;
  *
  * The parameters are:
  * - length (Type label_t aka int): defines the number of subobject CDs (within a superior CD object) which all
- *   refer to the same type.
+ *   refer to the same type. If length is set to not defined (-1) that means the number of subobject cds is not known a priori.
  * - key (std::string): string key do identify the warelist rule within a map.
  * - description (std::string): a descriptive string for the given warelist rule.
  * - type (std::string): the string name of the type the warelist rule refers to.
@@ -21,6 +21,9 @@ class ConstructionValidator;
 
 struct WarelistRule
 {
+    static constexpr label_t lengthNotDefined = -1;
+    static constexpr label_t lengthSingleton = 1;
+
     static ConstructionValidator const &getTrivialConstructionValidator();
 
     D_NAMED_ENUM(Usage, MANDATORY, OPTIONAL)
@@ -36,7 +39,7 @@ struct WarelistRule
     WarelistRule();
 
     template<typename NR>
-    static WarelistRule forSubobjectList(std::string d, label_t length = -1)
+    static WarelistRule forSubobjectList(std::string d, label_t length = lengthNotDefined)
     {
         WarelistRule rule;
         rule.length = length;
@@ -50,7 +53,7 @@ struct WarelistRule
     template<typename NR>
     static WarelistRule forSubobject(std::string d)
     {
-        return WarelistRule::forSubobjectList<NR>(d, 1);
+        return WarelistRule::forSubobjectList<NR>(d, lengthSingleton);
     }
 };
 

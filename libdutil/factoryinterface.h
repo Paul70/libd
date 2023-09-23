@@ -11,7 +11,6 @@ namespace DUTIL {
 struct ConstructionData;
 class Ware;
 
-namespace FactoryInterfaceDetail {
 //! Define a type trait to test if a class is a factory interface type.
 template<typename T>
 struct isInterface : std::false_type
@@ -19,6 +18,7 @@ struct isInterface : std::false_type
 template<typename T>
 constexpr bool isInterfaceValue = isInterface<T>::value;
 
+namespace FactoryInterfaceDetail {
 //! Return the name of the concrete factory.
 std::string getConcreteClassNameViaWareTypeSetting(ConstructionData const &cd);
 
@@ -38,8 +38,7 @@ public:
      */
     static std::string getInterfaceName()
     {
-        static_assert(FactoryInterfaceDetail::isInterfaceValue<BaseType>,
-                      "The specified type parameter is not a registered interface type.");
+        static_assert(isInterfaceValue<BaseType>, "The specified type parameter is not a registered interface type.");
         return "";
     }
 
@@ -74,7 +73,7 @@ protected:
  */
 #define D_DECLARE_FACTORYINTERFACE(BASE_TYPE) \
     template<> \
-    struct DUTIL::FactoryInterfaceDetail::isInterface<BASE_TYPE> : std::true_type \
+    struct DUTIL::isInterface<BASE_TYPE> : std::true_type \
     {}; \
     template<> \
     std::string DUTIL::FactoryInterface<BASE_TYPE>::getInterfaceName();

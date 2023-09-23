@@ -14,7 +14,7 @@ TEST_F(WareTests, getConcreteClassNameWorksAsExpected)
     using namespace LIBD::TESTS;
     ConstructionData cd = ConstructionData().setEnum(TestDummy::COLOR::GREEN);
     TestDummy td(cd);
-    auto strName = "::TESTS::TestDummy";
+    auto strName = "::LIBD::TESTS::TestDummy";
     auto strShortName = "TestDummy";
     auto name = td.getConcreteClassName();
     auto shortName = td.getShortConcreteClassName();

@@ -1,6 +1,6 @@
+#include "libd/libdutil/namedclass.h"
 #include "tests/testbase.h"
 #include "tests/testdummy.h"
-#include "libd/libdutil/namedclass.h"
 
 using namespace LIBD::TESTS;
 
@@ -14,6 +14,6 @@ TEST_F(NamedClassTests, namedClassMakroWorksAsExpected)
     auto longClassName = TestDummy::getClassName();
     auto shortClassName = TestDummy::getShortClassName();
 
-    EXPECT_EQ(longClassName, "::TESTS::TestDummy");
+    EXPECT_EQ(longClassName, "::LIBD::TESTS::TestDummy");
     EXPECT_EQ(shortClassName, "TestDummy");
 }

@@ -1,4 +1,5 @@
 #include "libdutil/constructiondata.h"
+#include "libdutil/constructionvalidator.h"
 #include "libdutil/namedreference.h"
 #include "libdutil/settings.h"
 #include "tests/testbase.h"
@@ -18,6 +19,12 @@ class SubSubobject
 public:
     D_NAMED_ENUM(COLOR, RED = 5, BLUE = 10, GREEN)
     D_NAMED_STRING(Description)
+
+    static ConstructionValidator const &getConstructionValidator()
+    {
+        static ConstructionValidator cv;
+        return cv;
+    }
 
     explicit SubSubobject(ConstructionData const &cd) :
         color_(cd.s.getEnum<COLOR>()),
@@ -46,6 +53,12 @@ public:
     //! Define the list of sub-subobjects needed for construction
     D_NAMED_REFERENCE(SubSubObjectList, SubSubobject)
     D_NAMED_STRING(Description)
+
+    static ConstructionValidator const &getConstructionValidator()
+    {
+        static ConstructionValidator cv;
+        return cv;
+    }
 
     explicit Subobject(ConstructionData const &cd) :
         subsubList_(),
