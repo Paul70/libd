@@ -62,40 +62,67 @@ struct ConstructionData
 
     //! Forward a NamedParmeter object. Parameter object is stored in Settings member.
     template<typename NP>
-    ConstructionData &setParamter(NP const &np) &
+    ConstructionData &setParameter(NP const &np) &
     {
         s.setParameter(np);
         return *this;
     }
 
     template<typename NP>
-    ConstructionData &&setParamter(NP const &np) &&
+    ConstructionData &&setParameter(NP const &np) &&
     {
         s.setParameter(np);
         return std::move(*this);
     }
 
     //! Forward a ConcreteClass object into Settings member.
-    template<typename ConcreteClass>
+    template<typename ConcreteClassNP>
     ConstructionData &setConcreteClassParameter() &
     {
-        s.setConcreteClassParameter<ConcreteClass>();
+        s.setConcreteClassParameter<ConcreteClassNP>();
         return *this;
     }
 
-    template<typename ConcreteClass>
+    template<typename ConcreteClassNP>
     ConstructionData &&setConcreteClassParameter() &&
     {
-        s.setConcreteClassParameter<ConcreteClass>();
+        s.setConcreteClassParameter<ConcreteClassNP>();
         return std::move(*this);
     }
 
     //! Helper function to register subobject data or shared wares with an unique key.
-    std::string createSharedWareKeyWithCounter(std::string key) const;
+    std::string createSharedWareKeyWithCounter(std::string key, std::shared_ptr<const Ware> sharedWarePtr) const;
     std::string createSubObjectKeyWithCounter(std::string key) const;
 
     //! Helper function to get back sub-ConstructionData structs  or shared wares stored in 'subObjectData' and 'sharedWares', respectively.
     std::map<std::string, ConstructionData>::const_iterator getSubObjectWithCounter(std::string key, label_t index = 0) const;
+
+    template<typename NR>
+    ConstructionData &addSharedWare(NR const &nr = NR("")) &
+    {
+        auto key = createSharedWareKeyWithCounter(NR::RT::getReferenceName(), nr.ptr());
+
+        // Next step is crucial for adding shared wares.
+        // Since we have to check if the shared ware fullfills the setting rules and we are dealing with
+        // already constructed objects, do not forget to add all shared ware settings to the construction data settings here.
+        //
+        // Later, during the setting rule check, one will fetch the shares ware's construction validator and check its setting rules.
+        // And we will regain the pointer to initialize shared wares.
+        //s.set(key, nr.ptr());
+        sharedWares.emplace(std::make_pair(key, nr.ptr()));
+        return *this;
+    }
+
+    template<typename NR>
+    ConstructionData &&addSharedWare(NR const &nr = NR("")) &&
+    {
+        auto key = createSharedWareKeyWithCounter(NR::getReferenceName(), nr.ptr());
+
+        // see the comment in the functio above for an explanation of this step.
+        //s.set(key, nr.ptr());
+        sharedWares.emplace(std::make_pair(key, nr.ptr()));
+        return std::move(*this);
+    }
 
     /*! \brief Add construction data for a subobject construction.
      *
@@ -104,14 +131,14 @@ struct ConstructionData
      *
      */
     template<typename NR>
-    ConstructionData &addSubObject(ConstructionData const &cd = ConstructionData()) &
+    ConstructionData &addSubobject(ConstructionData const &cd = ConstructionData()) &
     {
         subObjectData.emplace(std::make_pair(createSubObjectKeyWithCounter(NR::getReferenceName()), cd));
         return *this;
     }
 
     template<typename NR>
-    ConstructionData &&addSubObject(ConstructionData const &cd = ConstructionData()) &&
+    ConstructionData &&addSubobject(ConstructionData const &cd = ConstructionData()) &&
     {
         subObjectData.emplace(std::make_pair(createSubObjectKeyWithCounter(NR::getReferenceName()), cd));
         return std::move(*this);
@@ -136,7 +163,7 @@ struct ConstructionData
     }
 
 private:
-    const Usage usage_;
+    Usage usage_;
 };
 
 } // namespace DUTIL

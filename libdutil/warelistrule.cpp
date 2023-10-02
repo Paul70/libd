@@ -11,6 +11,7 @@ ConstructionValidator const &WarelistRule::getTrivialConstructionValidator()
 
 WarelistRule::WarelistRule() :
     usage(Usage::MANDATORY),
+    asReference(false),
     length(lengthNotDefined),
     key(""),
     description(""),

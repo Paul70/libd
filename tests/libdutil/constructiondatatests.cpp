@@ -107,7 +107,7 @@ TEST_F(ConstructionDataTests, testConstructWithConstructionDataWorksAsExpected)
     // clang-format off
     ConstructionData cd = ConstructionData()
                             .setEnum<SubSubobject::COLOR>(SubSubobject::COLOR::GREEN)
-                            .setParamter<SubSubobject::Description>("This is a Subsubobject");
+                            .setParameter<SubSubobject::Description>("This is a Subsubobject");
 
     // clang-format on
     SubSubobject sso(cd);
@@ -120,10 +120,10 @@ TEST_F(ConstructionDataTests, testAddSubObject)
     // ConstructionData for SubSubObject
     // clang-format off
     ConstructionData cd = ConstructionData()
-                            .setParamter<Subobject::Description>("This is a SubObject")
-                            .addSubObject<Subobject::SubSubObjectList>(ConstructionData()
+                            .setParameter<Subobject::Description>("This is a SubObject")
+                            .addSubobject<Subobject::SubSubObjectList>(ConstructionData()
                                                                            .setEnum<SubSubobject::COLOR>(SubSubobject::COLOR::GREEN)
-                                                                           .setParamter<SubSubobject::Description>("This is a SubSubObject"));
+                                                                           .setParameter<SubSubobject::Description>("This is a SubSubObject"));
     // clang-format on
     ConstructionData cdForSubSubObject = cd.getSubObjectCd<Subobject::SubSubObjectList>();
     SubSubobject sso = SubSubobject(cdForSubSubObject);

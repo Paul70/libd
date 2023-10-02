@@ -1,267 +1,21 @@
-#include "libdutil/concretefactory.h"
 #include "libdutil/constructiondata.h"
-#include "libdutil/constructionvalidator.h"
-#include "libdutil/namedclass.h"
-#include "libdutil/projectware.h"
-#include "libdutil/settingrule.h"
-#include "libdutil/warelistrule.h"
+#include "tests/compoundware.h"
 #include "tests/testbase.h"
+#include "tests/zoo.h"
 
+using namespace TESTS;
 using namespace DUTIL;
 namespace {
 class ConstructionValidatorTests : public TestBase
 {};
 
-class Cat : public DUTIL::ProjectWare
-{
-public:
-    D_NAMED_ENUM(Type, TIGER, LION, JAGUAR, LUX)
-
-    D_NAMED_STRING(Name)
-    D_NAMED_PARAMETER(Age, label_t)
-
-    static ConstructionValidator const &getConstructionValidator()
-    {
-        using SR = SettingRule;
-        // clang-format off
-        static ConstructionValidator cv({
-            [](){
-              return SR::forNamedParameter<Cat::Name>(SR::Usage::MANDATORY_NO_DEFAULT, "The unique name of this tiger.");
-            }(),
-            [](){
-              return SR::forNamedParameter<Cat::Age>(SR::Usage::MANDATORY_NO_DEFAULT, "The current age of this tiger.");
-            }()
-            },
-            {}, // empty warelist rules map
-            ProjectWare::getConstructionValidator());
-        // clang-format on
-        return cv;
-    }
-
-    explicit Cat(ConstructionData const &cd) :
-        name_(getConstructionValidator().validateNamedParameter<Name>(cd)),
-        age_(getConstructionValidator().validateNamedParameter<Age>(cd))
-    {}
-
-    Cat::Type getType() const
-    {
-        return getTypeImpl();
-    }
-
-    Name getName() const
-    {
-        return name_;
-    }
-
-    Age getAge() const
-    {
-        return age_;
-    }
-
-private:
-    virtual Cat::Type getTypeImpl() const = 0;
-
-    const Name name_;
-    Age age_;
-};
-
-} // namespace
-D_DECLARE_FACTORYINTERFACE(::Cat)
-D_DEFINE_FACTORYINTERFACE(::Cat)
-
-#define D_DECLARE_CAT(REGISTERED_CLASS) static const DUTIL::ConcreteFactory<REGISTERED_CLASS, ::Cat, DUTIL::ProjectWare> factory;
-
-#define D_DEFINE_CAT(REGISTERED_CLASS) \
-    const DUTIL::ConcreteFactory<REGISTERED_CLASS, ::Cat, DUTIL::ProjectWare> REGISTERED_CLASS::factory;
-
-namespace {
-
-class Tiger : public Cat, public D_NAMED_CLASS(::Tiger)
-{
-public:
-    D_DECLARE_CAT(Tiger)
-
-    D_NAMED_ENUM(Species, AMUR, INDIAN, BENGAL)
-
-    static ConstructionValidator const &getConstructionValidator()
-    {
-        using SR = SettingRule;
-        // clang-format off
-            static ConstructionValidator cv({
-                [](){
-                    SR sr = SR::forNamedEnum<Tiger::Species>(SR::Usage::MANDATORY_WITH_DEFAULT, "The species of this tiger.");
-                    sr.defaultValue = Variant(Tiger::Species::AMUR);
-                    return sr;
-                }()
-                },
-                {}, // empty warelist rules map
-                Cat::getConstructionValidator());
-        // clang-format on
-        return cv;
-    }
-
-    explicit Tiger(ConstructionData const &cd) :
-        Cat(cd),
-        species_(getConstructionValidator().validateNamedEnum<Tiger::Species>(cd))
-    {}
-
-private:
-    virtual Cat::Type getTypeImpl() const override
-    {
-        return type_;
-    }
-
-    const Cat::Type type_ = Cat::Type::TIGER;
-    const Species species_;
-};
-
-class Jaguar : public Cat, public D_NAMED_CLASS(::Jaguar)
-{
-public:
-    D_DECLARE_CAT(Jaguar)
-
-    static ConstructionValidator const &getConstructionValidator()
-    {
-        // clang-format off
-            static ConstructionValidator cv(
-                {}, // emtpy settingrule map
-                {}, // empty warelistrule map
-                Cat::getConstructionValidator());
-        // clang-format on
-        return cv;
-    }
-
-    explicit Jaguar(ConstructionData const &cd) :
-        Cat(cd)
-    {}
-
-private:
-    virtual Cat::Type getTypeImpl() const override
-    {
-        return type_;
-    }
-
-    const Cat::Type type_ = Cat::Type::TIGER;
-};
-
-D_DEFINE_CAT(Tiger)
-D_DEFINE_CAT(Jaguar)
-
-class Zoo : public DUTIL::ProjectWare, public D_NAMED_CLASS(::Zoo)
-{
-public:
-    using CatMap = std::map<std::string, std::unique_ptr<Cat>>;
-    //using ElephantMap = std::map<std::string, std::unique_ptr<Elephant>>;
-
-    D_NAMED_ENUM(ClosingDay, MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY)
-
-    D_NAMED_STRING(Name)
-
-    D_NAMED_LABEL(Min_Visitors)
-    D_NAMED_LABEL(Max_Visitors)
-
-    // Define the list of tigers living in the zoo
-    D_NAMED_REFERENCE(CatList, Cat)
-    D_NAMED_REFERENCE(SingleTiger, Tiger)
-
-    static DUTIL::ConstructionValidator const &getConstructionValidator()
-    {
-        using SR = SettingRule;
-        using WR = WarelistRule;
-        // clang-format off
-        static const ConstructionValidator cv({
-            []() {
-                SR sr = SR::forNamedParameter<Name>(SR::Usage::MANDATORY_NO_DEFAULT, "The name of the new zoo.");
-                sr.listOfPossibleValues = {"Wilhelma","Hellabrunn","Zoologische Garten Berlin"};
-                return sr;
-            } (),
-            []() {
-                SR sr = SR::forNamedEnum<ClosingDay>(SR::Usage::MANDATORY_WITH_DEFAULT, "The zoo's rest day.");
-                sr.defaultValue = Variant(Zoo::ClosingDay::MONDAY);
-                return sr;
-            }(),
-            []() {
-                SR sr = SR::forNamedParameter<Min_Visitors>(SR::Usage::MANDATORY_WITH_DEFAULT, "The minimal number of visitors needed to open the zoo.");
-                sr.minimalValue = Variant(10);
-                sr.maximalValue = Variant(50);
-                sr.defaultValue = Variant(20);
-                return sr;
-            }(),
-            []() {
-                SR sr = SR::forNamedParameter<Max_Visitors>(SR::Usage::MANDATORY_WITH_DEFAULT, "The maximal number of visitors before the zoo closes.");
-                sr.maximalValue = Variant(10000);
-                sr.minimalValue = Variant(1000);
-                sr.defaultValue = Variant(8000);
-                return sr;
-            }()
-        }, // end list of setting rules
-        { [](){
-            WR wr = WR::forSubobjectList<CatList>("A subobject list for cats living in the zoo.");
-            wr.usage = WR::Usage::OPTIONAL;
-            return wr;}(),
-          [](){
-            WR wr = WR::forSubobject<SingleTiger>("A subobject for a tiger living in the zoo.");
-            wr.usage = WR::Usage::OPTIONAL;
-            return wr;}()
-        }, // end list of warelist rules
-        ProjectWare::getConstructionValidator());
-        // clang-format on
-        return cv;
-    }
-
-    explicit Zoo(DUTIL::ConstructionData const &cd) :
-        name_(getConstructionValidator().validateNamedParameter<Name>(cd)),
-        off_(getConstructionValidator().validateNamedEnum<Zoo::ClosingDay>(cd)),
-        min_(getConstructionValidator().validateNamedParameter<Min_Visitors>(cd)),
-        max_(getConstructionValidator().validateNamedParameter<Max_Visitors>(cd))
-    {
-        auto catlist = getConstructionValidator().buildSubobjectList<CatList>(cd);
-        for (auto &cat : catlist) {
-            catmap_.emplace(cat->getName().value(), std::move(cat));
-        }
-
-        auto singleCat = getConstructionValidator().buildSubObject<SingleTiger>(cd);
-        if (singleCat) {
-            catmap_.emplace(singleCat->getName().value(), std::move(singleCat));
-        }
-    }
-
-    bool findCat(std::string name) const
-    {
-        if (catmap_.find(name) != catmap_.cend())
-            return true;
-        else
-            return false;
-    }
-
-    Name getName() const
-    {
-        return name_;
-    }
-
-    Min_Visitors getMinVisitors() const
-    {
-        return min_;
-    }
-
-    Max_Visitors getMaxVisitors() const
-    {
-        return max_;
-    }
-
-    ClosingDay getOffDay() const
-    {
-        return off_;
-    }
-
-private:
-    CatMap catmap_;
-    //ElephantMap elephantMap_;
-    Name name_;
-    ClosingDay off_;
-    Min_Visitors min_;
-    Max_Visitors max_;
-};
+D_NAMED_LABEL(LabelParam);
+D_NAMED_REAL(RealParam);
+D_NAMED_STRING(StringParam);
+// muss ich aufsetzen erst
+//D_NAMED_REFERENCE(BaseReference, Base);
+//D_NAMED_REFERENCE(TrivialReference, TrivialWare);
+D_NAMED_ENUM(States, NEWYORK, ALABAMA, CALIFORNIA, NEVADA, WOSHINGTON, FLORIDA, TEXAS)
 
 } // namespace
 
@@ -295,7 +49,7 @@ TEST_F(ConstructionValidatorTests, testConstructionWithSettingRulesAndValidation
 
     // test construction using the default value for Cat memeber
     {
-        ConstructionData cd = ConstructionData().setParamter<Zoo::Name>("Wilhelma");
+        ConstructionData cd = ConstructionData().setParameter<Zoo::Name>("Wilhelma");
         auto cv = Zoo::getConstructionValidator();
         auto validationError = cv.check(cd);
         ASSERT_TRUE(validationError.empty());
@@ -307,9 +61,9 @@ TEST_F(ConstructionValidatorTests, testConstructionWithSettingRulesAndValidation
         // min and max visitor numbers within the limits
         Zoo z(ConstructionData()
                   .setEnum<Zoo::ClosingDay>(Zoo::ClosingDay::FRIDAY)
-                  .setParamter<Zoo::Name>("Hellabrunn")
-                  .setParamter<Zoo::Min_Visitors>(50)
-                  .setParamter<Zoo::Max_Visitors>(1000));
+                  .setParameter<Zoo::Name>("Hellabrunn")
+                  .setParameter<Zoo::Min_Visitors>(50)
+                  .setParameter<Zoo::Max_Visitors>(1000));
         ASSERT_TRUE(z.getName().value() == "Hellabrunn");
         ASSERT_TRUE(z.getOffDay() == Zoo::ClosingDay::FRIDAY);
         ASSERT_TRUE(z.getMinVisitors() == 50);
@@ -317,7 +71,7 @@ TEST_F(ConstructionValidatorTests, testConstructionWithSettingRulesAndValidation
     }
     {
         // min and max visitor numbers within the limits
-        Zoo z(ConstructionData().setEnum<Zoo::ClosingDay>(Zoo::ClosingDay::SUNDAY).setParamter<Zoo::Name>("Hellabrunn"));
+        Zoo z(ConstructionData().setEnum<Zoo::ClosingDay>(Zoo::ClosingDay::SUNDAY).setParameter<Zoo::Name>("Hellabrunn"));
         ASSERT_TRUE(z.getName().value() == "Hellabrunn");
         ASSERT_TRUE(z.getOffDay() == Zoo::ClosingDay::SUNDAY);
         ASSERT_TRUE(z.getMinVisitors() == 20);   // check default value
@@ -327,23 +81,23 @@ TEST_F(ConstructionValidatorTests, testConstructionWithSettingRulesAndValidation
         // min and max visitor numbers within the limits
         D_EXPECT_THROW(Zoo z(ConstructionData()
                                  .setEnum<Zoo::ClosingDay>(Zoo::ClosingDay::TUESDAY)
-                                 .setParamter<Zoo::Name>("Hellabrunn")
-                                 .setParamter<Zoo::Min_Visitors>(5)),
+                                 .setParameter<Zoo::Name>("Hellabrunn")
+                                 .setParameter<Zoo::Min_Visitors>(5)),
                        "is smaller than the allowed min value");
         D_EXPECT_THROW(Zoo z(ConstructionData()
                                  .setEnum<Zoo::ClosingDay>(Zoo::ClosingDay::TUESDAY)
-                                 .setParamter<Zoo::Name>("Hellabrunn")
-                                 .setParamter<Zoo::Min_Visitors>(50000)),
+                                 .setParameter<Zoo::Name>("Hellabrunn")
+                                 .setParameter<Zoo::Min_Visitors>(50000)),
                        "is bigger than the allowed max value");
         D_EXPECT_THROW(Zoo z(ConstructionData()
                                  .setEnum<Zoo::ClosingDay>(Zoo::ClosingDay::TUESDAY)
-                                 .setParamter<Zoo::Name>("Hellabrunn")
-                                 .setParamter<Zoo::Max_Visitors>(50000)),
+                                 .setParameter<Zoo::Name>("Hellabrunn")
+                                 .setParameter<Zoo::Max_Visitors>(50000)),
                        "is bigger than the allowed max value");
         D_EXPECT_THROW(Zoo z(ConstructionData()
                                  .setEnum<Zoo::ClosingDay>(Zoo::ClosingDay::TUESDAY)
-                                 .setParamter<Zoo::Name>("Hellabrunn")
-                                 .setParamter<Zoo::Max_Visitors>(0)),
+                                 .setParameter<Zoo::Name>("Hellabrunn")
+                                 .setParameter<Zoo::Max_Visitors>(0)),
                        "is smaller than the allowed min value");
     }
 }
@@ -353,14 +107,14 @@ TEST_F(ConstructionValidatorTests, testBuildSubobject)
     // clang-format off
     Zoo z(ConstructionData()
               .setEnum<Zoo::ClosingDay>(Zoo::ClosingDay::TUESDAY)
-              .setParamter<Zoo::Name>("Hellabrunn")
-              .setParamter<Zoo::Min_Visitors>(50)
-              .setParamter<Zoo::Max_Visitors>(1000)
-              .addSubObject<Zoo::SingleTiger>(
+              .setParameter<Zoo::Name>("Hellabrunn")
+              .setParameter<Zoo::Min_Visitors>(50)
+              .setParameter<Zoo::Max_Visitors>(1000)
+              .addSubobject<Zoo::SingleTiger>(
                     ConstructionData()
                         .setConcreteClassParameter<Tiger>()
-                        .setParamter<Cat::Name>("SingleTiger")
-                        .setParamter<Cat::Age>(7))
+                        .setParameter<Cat::Name>("SingleTiger")
+                        .setParameter<Cat::Age>(7))
           );
     // clang-format on
     ASSERT_TRUE(z.getOffDay() == Zoo::ClosingDay::TUESDAY);
@@ -373,29 +127,29 @@ TEST_F(ConstructionValidatorTests, testBuildSubobjectList)
     // clang-format off
     Zoo z(ConstructionData()
               .setEnum<Zoo::ClosingDay>(Zoo::ClosingDay::SATURDAY)
-              .setParamter<Zoo::Name>("Hellabrunn")
-              .setParamter<Zoo::Min_Visitors>(50)
-              .setParamter<Zoo::Max_Visitors>(1000)
-              .addSubObject<Zoo::CatList>(
+              .setParameter<Zoo::Name>("Hellabrunn")
+              .setParameter<Zoo::Min_Visitors>(50)
+              .setParameter<Zoo::Max_Visitors>(1000)
+              .addSubobject<Zoo::CatList>(
                     ConstructionData()
                         .setConcreteClassParameter<Tiger>()
-                        .setParamter<Tiger::Name>("TigerA")
-                        .setParamter<Tiger::Age>(7))
-              .addSubObject<Zoo::CatList>(
+                        .setParameter<Tiger::Name>("TigerA")
+                        .setParameter<Tiger::Age>(7))
+              .addSubobject<Zoo::CatList>(
                     ConstructionData()
                         .setConcreteClassParameter<Tiger>()
-                        .setParamter<Tiger::Name>("TigerB")
-                        .setParamter<Tiger::Age>(8))
-              .addSubObject<Zoo::CatList>(
+                        .setParameter<Tiger::Name>("TigerB")
+                        .setParameter<Tiger::Age>(8))
+              .addSubobject<Zoo::CatList>(
                     ConstructionData()
                         .setConcreteClassParameter<Jaguar>()
-                        .setParamter<Tiger::Name>("JaguarA")
-                        .setParamter<Tiger::Age>(4))
-              .addSubObject<Zoo::CatList>(
+                        .setParameter<Tiger::Name>("JaguarA")
+                        .setParameter<Tiger::Age>(4))
+              .addSubobject<Zoo::CatList>(
                     ConstructionData()
                         .setConcreteClassParameter<Jaguar>()
-                        .setParamter<Tiger::Name>("JaguarB")
-                        .setParamter<Tiger::Age>(4))
+                        .setParameter<Tiger::Name>("JaguarB")
+                        .setParameter<Tiger::Age>(4))
           );
     // clang-format on
     ASSERT_TRUE(z.getOffDay() == Zoo::ClosingDay::SATURDAY);
@@ -404,3 +158,242 @@ TEST_F(ConstructionValidatorTests, testBuildSubobjectList)
     ASSERT_TRUE((z.findCat("JaguarA")));
     ASSERT_TRUE((z.findCat("JaguarB")));
 }
+
+TEST_F(ConstructionValidatorTests, buildSubobjectList_withValidSubobjectData_works)
+{
+    ConstructionData cdA1 = ConstructionData().setConcreteClassParameter<CompoundWareA>().setParameter<CompoundWareA::LabelA>(1);
+    ConstructionData cdA2 = ConstructionData().setConcreteClassParameter<CompoundWareA>().setParameter<CompoundWareA::LabelA>(2);
+    ConstructionData cdC = ConstructionData()
+                               .addSubobject<CompoundWareC::WareAVariableListInstance>(cdA1)
+                               .addSubobject<CompoundWareC::WareAVariableListInstance>(cdA2);
+
+    auto wareAList = CompoundWareC::getConstructionValidator().buildSubobjectList<CompoundWareC::WareAVariableListInstance>(cdC);
+    ASSERT_EQ(2u, wareAList.size());
+    ASSERT_EQ(1, wareAList[0]->lA);
+    ASSERT_EQ(2, wareAList[1]->lA);
+}
+
+TEST_F(ConstructionValidatorTests, checkNamedEnum)
+{
+    SettingRule sd = SettingRule::forNamedEnum<States>(SettingRule::Usage::MANDATORY_NO_DEFAULT,
+                                                       "a container for american states");
+    ConstructionValidator cv({sd});
+    ConstructionData cd = ConstructionData().setEnum(States::TEXAS);
+
+    ASSERT_TRUE(cv.checkNamedEnum<States>(cd).empty());
+    ASSERT_FALSE(cv.checkNamedEnum<States>(ConstructionData()).empty());
+}
+
+TEST_F(ConstructionValidatorTests, checkNamedParameterForLabel)
+{
+    SettingRule sd = SettingRule::forNamedParameter<LabelParam>(SettingRule::Usage::OPTIONAL, "a label parameter");
+    sd.defaultValue = 15;
+    sd.minimalValue = 10;
+    sd.maximalValue = 20;
+    ConstructionValidator cv({sd});
+    LabelParam lp = 17;
+    ConstructionData cd = ConstructionData().setParameter(lp);
+    ASSERT_TRUE(cv.checkNamedParameter<LabelParam>(cd).empty());
+    lp = 5;
+    cd.s.setParameter(lp);
+    ASSERT_FALSE(cv.checkNamedParameter<LabelParam>(cd).empty());
+}
+
+TEST_F(ConstructionValidatorTests, checkNamedParameteForReal)
+{
+    SettingRule sd = SettingRule::forNamedParameter<RealParam>(SettingRule::Usage::OPTIONAL, "a real parameter");
+    sd.defaultValue = -50.0;
+    sd.minimalValue = -100.0;
+    sd.maximalValue = -10.0;
+    ConstructionValidator cv({sd});
+    RealParam rp = -42.3;
+    ConstructionData cd = ConstructionData().setParameter(rp);
+    ASSERT_TRUE(cv.checkNamedParameter<RealParam>(cd).empty());
+    rp = 0.0;
+    cd.s.setParameter(rp);
+    ASSERT_FALSE(cv.checkNamedParameter<RealParam>(cd).empty());
+}
+
+TEST_F(ConstructionValidatorTests, checkNamedParameterForString)
+{
+    SettingRule sd = SettingRule::forNamedParameter<StringParam>(SettingRule::Usage::OPTIONAL, "a string parameter");
+    sd.defaultValue = "bla";
+    sd.minimalStringLength = 2;
+    ConstructionValidator cv({sd});
+    StringParam sp("xx");
+    ASSERT_TRUE(cv.checkNamedParameter<StringParam>(ConstructionData().setParameter(sp)).empty());
+    sp = "y";
+    EXPECT_THAT(cv.checkNamedParameter<StringParam>(ConstructionData().setParameter(sp)),
+                testing::HasSubstr("Setting for key 'StringParam' and value: 'y' requires a min string length of 2."));
+}
+
+//TEST_F(ConstructionValidatorTests, checkSharedWareMissingRuleReturnsError)
+//{
+//    ConstructionData cdB;
+//    auto errors = CompoundWareB::getConstructionValidator().checkSharedWare<TrivialReference>(cdB);
+//    EXPECT_THAT(errors, testing::HasSubstr("ware rule key 'TrivialReference' is unknown"));
+//}
+
+TEST_F(ConstructionValidatorTests, validateNamedParameterForReal)
+{
+    ConstructionValidator cv({SettingRule::forNamedParameter<RealParam>(SettingRule::Usage::OPTIONAL, "a real parameter")});
+    RealParam rp = -42.3;
+    ConstructionData cd = ConstructionData().setParameter(rp);
+    ASSERT_EQ(-42.3, cv.validateNamedParameter<RealParam>(cd).value());
+}
+
+TEST_F(ConstructionValidatorTests, validateNamedParameterForStringWorks)
+{
+    SettingRule sr = SettingRule::forNamedParameter<StringParam>(SettingRule::Usage::OPTIONAL, "a string parameter");
+    sr.minimalStringLength = 5;
+    sr.defaultValue = "12345";
+    ConstructionValidator cv({sr});
+    StringParam sp("abcdef");
+
+    ConstructionData cd = ConstructionData().setParameter(sp);
+    ASSERT_EQ(std::string("abcdef"), cv.validateNamedParameter<StringParam>(cd).value());
+    // check if we get the default value.
+    std::cout << sr.defaultValue.toString() << std::endl;
+    ASSERT_EQ(std::string("12345"), cv.validateNamedParameter<StringParam>(ConstructionData()).value());
+}
+
+//TEST_F(ConstructionValidatorTests, validateNamedReference_withReferenceToInterface_worksAsExpected)
+//{
+//    auto wlr = WarelistRule::forSharedWare<BaseReference>("a reference to base");
+//    ConstructionValidator cv({}, {wlr});
+
+//    ConstructionData cdDerived = ConstructionData().setParameter<DerivedA::DerivedAInt>(421);
+//    ConstructionData cdBase = ConstructionData().addSharedWare(BaseReference("derivedA0", std::make_shared<DerivedA>(cdDerived)));
+
+//    ASSERT_EQ("derivedA0", cv.validateNamedReference<BaseReference>(cdBase).id());
+//}
+
+TEST_F(ConstructionValidatorTests, validateSharedWare_withValidObject_works)
+{
+    ConstructionData cdA = ConstructionData().setParameter<CompoundWareA::LabelA>(-42);
+    ConstructionData cdB = ConstructionData().addSharedWare(
+        CompoundWareB::WareAPtrRef("wareAPtrRef", std::make_shared<CompoundWareA>(cdA)));
+    auto wareA = CompoundWareB::getConstructionValidator().validateSharedWare<CompoundWareB::WareAPtrRef>(cdB);
+    ASSERT_TRUE(bool(wareA.ptr()));
+    ASSERT_EQ(-42, wareA->lA);
+}
+
+TEST_F(ConstructionValidatorTests, validateSharedWareWithOptionalUsage)
+{
+    auto modifiedCV = ConstructionValidator({},
+                                            {[]() {
+                                                auto wlr = WarelistRule::forSharedWare<CompoundWareB::WareAPtrRef>(
+                                                    "pointer to const ware A");
+                                                wlr.usage = WarelistRule::Usage::OPTIONAL;
+                                                return wlr;
+                                            }()},
+                                            CompoundWareB::getConstructionValidator());
+    ConstructionData cdB;
+    ASSERT_EQ("", modifiedCV.checkSharedWare<CompoundWareB::WareAPtrRef>(cdB));
+    auto wareA = modifiedCV.validateSharedWare<CompoundWareB::WareAPtrRef>(cdB);
+    ASSERT_FALSE(bool(wareA.ptr()));
+
+    auto cdA = ConstructionData().setParameter<CompoundWareA::LabelA>(-42);
+    cdB = ConstructionData().addSharedWare(CompoundWareB::WareAPtrRef("wareAPtrRef", std::make_shared<CompoundWareA>(cdA)));
+    ASSERT_EQ("", modifiedCV.checkSharedWare<CompoundWareB::WareAPtrRef>(cdB));
+    wareA = modifiedCV.validateSharedWare<CompoundWareB::WareAPtrRef>(cdB);
+    ASSERT_TRUE(bool(wareA.ptr()));
+    ASSERT_EQ(-42, wareA->lA);
+}
+
+//TEST_F(ConstructionValidatorTests, checkSharedList_ruleIsforSharedWare_returnsError)
+//{
+//    ConstructionData cdB;
+//    auto errors = CompoundWareB::getConstructionValidator().checkSharedList<CompoundWareB::WareAPtrRef>(cdB);
+//    EXPECT_THAT(errors, testing::HasSubstr("ware list rule for 'WareAPtrRef': is for a single object, not a list"));
+//}
+
+TEST_F(ConstructionValidatorTests, checkWithSettingAndWareListRules)
+{
+    ConstructionData cdA = ConstructionData().setParameter<CompoundWareA::LabelA>(177);
+
+    ConstructionData cdB = ConstructionData().setParameter<CompoundWareA::LabelA>(177).addSharedWare(
+        CompoundWareB::WareAPtrRef("A", std::make_shared<CompoundWareA>(cdA)));
+
+    ConstructionData cdC = ConstructionData()
+                               .setEnum(CompoundWareC::ChoiceC::THE_BAD)
+                               .addSharedWare(CompoundWareC::WareAFixedListRef("A0", std::make_shared<CompoundWareA>(cdA)))
+                               .addSharedWare(CompoundWareC::WareAFixedListRef("A1", std::make_shared<CompoundWareA>(cdA)))
+                               .addSubobject<CompoundWareC::WareAFixedListInstance>(cdA)
+                               .addSubobject<CompoundWareC::WareAFixedListInstance>(cdA)
+                               .addSubobject<CompoundWareC::WareBInstance>(cdB);
+
+    ASSERT_EQ("", CompoundWareC::getConstructionValidator().check(cdC));
+}
+
+//TEST_F(ConstructionValidatorTests, check_forConcreteClass_works)
+//{
+//    ConstructionValidator cv = CompoundWareA::getConstructionValidator();
+//    ConstructionData cdA;
+
+//    EXPECT_THAT(cv.check(cdA), testing::HasSubstr("setting rule for 'LabelA': setting is mandatory"));
+
+//    cdA.setParameter<CompoundWareA::LabelA>(34);
+
+//    ASSERT_TRUE(cv.check(cdA).empty());
+//}
+
+//TEST_F(ConstructionValidatorTests, check_withGivenSettingRules_works)
+//{
+//    SettingRule sd1 =
+//        SettingRule::fromNamedEnum<Fruits>
+//        (SettingRule::Usage::MANDATORY_NO_DEFAULT, "a container for fruits");
+
+//    SettingRule sd2 = SettingRule::fromNamedParameter<LabelParam>
+//        (SettingRule::Usage::OPTIONAL, "a label parameter");
+//    sd2.defaultValue = 15;
+//    sd2.minimalValue = 10;
+//    sd2.maximalValue = 20;
+//    ConstructionValidator cv({sd1, sd2});
+
+//    ConstructionData cd;
+
+//    ASSERT_FALSE(cv.check((ConstructionData())).empty());
+//    cd.s = Settings()
+//               .setParameter(LabelParam(16))
+//               .setEnum(Fruits::BANANA);
+//    ASSERT_TRUE(cv.check(cd).empty());
+//    cd.s = Settings()
+//               .setParameter(LabelParam(14))
+//               .setEnum(Fruits::ORANGE);
+//    ASSERT_TRUE(cv.check(cd).empty());
+//    cd.s = Settings()
+//               .setParameter(LabelParam(21))
+//               .setEnum(Fruits::BANANA);
+//    ASSERT_FALSE(cv.check(cd).empty());
+//    cd.s = Settings().setParameter(LabelParam(14));
+//    ASSERT_FALSE(cv.check(cd).empty());
+//    cd.s = Settings().setEnum(Fruits::ORANGE);
+//    ASSERT_TRUE(cv.check(cd).empty());
+//}
+
+//TEST_F(ConstructionValidatorTests, checkSubobjectList_works)
+//{
+//    auto errors = CompoundWareC::getConstructionValidator().checkSubobjectList<CompoundWareB::WareAPtrRef>(ConstructionData());
+//    EXPECT_THAT(errors, HasSubstr("subobject rule key 'WareAPtrRef' is unknown"));
+
+//    errors = CompoundWareC::getConstructionValidator().checkSubobjectList<CompoundWareC::WareBInstance>(ConstructionData());
+//    EXPECT_THAT(errors, HasSubstr("subobject rule key 'WareBInstance': rule is for a single object, not a list"));
+
+//    ConstructionData cdA = ConstructionData().setParameter<CompoundWareA::LabelA>(177);
+//    ConstructionData cdC = ConstructionData()
+//                               .addSubobject<CompoundWareC::WareAFixedListInstance>(cdA);
+
+//    errors = CompoundWareC::getConstructionValidator().checkSubobjectList<CompoundWareC::WareAFixedListInstance>(cdC);
+//    EXPECT_THAT(errors, HasSubstr("subobject list rule for 'WareAFixedListInstance': length mismatch"));
+
+//    ConstructionData cdC_brokenA = cdC;
+//    cdC_brokenA.addSubobject<CompoundWareC::WareAFixedListInstance>(ConstructionData());
+
+//    errors = CompoundWareC::getConstructionValidator().checkSubobjectList<CompoundWareC::WareAFixedListInstance>(cdC_brokenA);
+//    EXPECT_THAT(errors, HasSubstr("in subobject data item 1 for 'WareAFixedListInstance':"));
+
+//    cdC.addSubobject<CompoundWareC::WareAFixedListInstance>(cdA);
+//    errors = CompoundWareC::getConstructionValidator().checkSubobjectList<CompoundWareC::WareAFixedListInstance>(cdC);
+//    ASSERT_EQ("", errors);
+//}

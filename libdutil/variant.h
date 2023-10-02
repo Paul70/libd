@@ -197,6 +197,19 @@ public:
     friend bool operator==(Variant const &lhs, Variant const &rhs);
     friend bool operator!=(Variant const &lhs, Variant const &rhs);
 
+    /*! \brief Assignment operator.
+     *
+     * Operators are implemented using the std::tie pattern.
+     * Implemented as friend functions to have lhs and rhs input arguments.
+     */
+    template<typename AssignedType, std::enable_if_t<VariantDetail::is_allowed_type_v<AssignedType>, bool> = true>
+    void operator=(AssignedType v)
+    {
+        Variant nV = Variant(v);
+        this->type_ = std::move(nV.type_);
+        this->var_ = std::move(nV.var_);
+    }
+
 protected:
     //! Return a reference to the std::variant member.
     DutilVariant const &get() const;

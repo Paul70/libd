@@ -28,6 +28,7 @@ struct WarelistRule
 
     D_NAMED_ENUM(Usage, MANDATORY, OPTIONAL)
     Usage usage;
+    bool asReference;
 
     label_t length;
     std::string key;
@@ -54,6 +55,21 @@ struct WarelistRule
     static WarelistRule forSubobject(std::string d)
     {
         return WarelistRule::forSubobjectList<NR>(d, lengthSingleton);
+    }
+
+    template<typename NR>
+    static WarelistRule forSharedWareList(std::string d, label_t length = lengthNotDefined)
+    {
+        WarelistRule rule;
+        rule = forSubobjectList<NR>(d, length);
+        rule.asReference = true;
+        return rule;
+    }
+
+    template<typename NR>
+    static WarelistRule forSharedWare(std::string d)
+    {
+        return forSharedWareList<NR>(d, lengthSingleton);
     }
 };
 

@@ -1,6 +1,7 @@
 #include "constructionvalidator.h"
 #include "constructiondata.h"
 #include "exception.h"
+#include "factory.h"
 #include <iostream>
 
 namespace DUTIL {
@@ -81,6 +82,9 @@ SettingRule checkSettingRule(SettingRule sr)
 WarelistRule checkWarelistRule(WarelistRule wr)
 {
     // check that callbackCV contains a reference to the static 'ConstructionValidator' function
+    D_ASSERT(!wr.key.empty());
+    D_ASSERT(!wr.type.empty());
+
     std::string cbName{wr.callbackCV.target_type().name()};
     D_ASSERT(cbName.find("ConstructionValidator") != std::string::npos);
 
@@ -105,13 +109,22 @@ std::string ConstructionValidator::recursiveCheck(ConstructionValidator const &c
     // check warelist rules for each subobject in cd
     for (auto &iter : cv.warelistRules_) {
         WarelistRule const &wlr = iter.second;
-        // hier muss dann noch die Abfrage for shared wares rein
-        if (wlr.length == 1) {
-            // single subobject.
-            errors = cv.checkSubObjectAndReturnErrors(cd, iter.first);
+        if (wlr.asReference) {
+            if (wlr.length == 1) {
+                // single shared ware.
+                errors = cv.checkSharedWareAndReturnErrors(cd, iter.first, wlr.type);
+            } else {
+                // list of shared wares all of the same type, therefore there is only one warelist rule.
+                errors = cv.checkSharedWareListAndReturnErrors(cd, iter.first, wlr.type);
+            }
         } else {
-            // list of subobjects all of the same type, therefore there is only one warelist rule.
-            errors = cv.checkSubObjectListAndReturnErrors(cd, iter.first);
+            if (wlr.length == 1) {
+                // single subobject.
+                errors = cv.checkSubObjectAndReturnErrors(cd, iter.first);
+            } else {
+                // list of subobjects all of the same type, therefore there is only one warelist rule.
+                errors = cv.checkSubObjectListAndReturnErrors(cd, iter.first);
+            }
         }
         if (!errors.empty()) {
             return errors;
@@ -153,16 +166,16 @@ ConstructionValidator::ConstructionValidator(std::vector<SettingRule> settingRul
     warelistRules_(baseCV.warelistRules_),
     check_(baseCV.check_)
 {
-    // put all setting rules into the map.
+    // Put all setting rules and warelist rules into the maps.
+    // Base class construction validator rules get overwritten by new rules referring to the same key.
     for (auto const &sr : settingRules) {
-        settingRules_.emplace(sr.key, checkSettingRule(sr));
+        settingRules_[sr.key] = checkSettingRule(sr);
     }
-
-    // put all the given warelist rules into the map
     for (auto const &wr : warelistRules) {
-        warelistRules_.emplace(wr.key, checkWarelistRule(wr));
+        warelistRules_[wr.key] = checkWarelistRule(wr);
     }
 
+    // Set the check function.
     if (checkF) {
         // assign a lambda to the check funtor
         // lambda first calls the check-function (not directly the functor) of the base construction validator.
@@ -190,6 +203,13 @@ std::string ConstructionValidator::check(ConstructionData const &cd) const
 bool ConstructionValidator::hasSettingRule(std::string const &key) const
 {
     if (settingRules_.find(key) == settingRules_.end())
+        return false;
+    return true;
+}
+
+bool ConstructionValidator::hasWarelistRule(std::string const &key) const
+{
+    if (warelistRules_.find(key) == warelistRules_.end())
         return false;
     return true;
 }
@@ -237,8 +257,9 @@ Variant ConstructionValidator::checkSettingRuleKeyAndReturnValue(Variant const v
         return sr.defaultValue;
     }
     if (sr.usage == SettingRule::Usage::OPTIONAL && value.isMonostate()) {
-        // optional value is not set in ConstructionData.
-        return Variant();
+        // Optional value is not set in ConstructionData. In that case, if construction data is not marked explicitly as proxy,
+        // we will return a default value if available or a monostate variant instead.
+        return sr.defaultValue;
     }
 
     // ckeck Variant type
@@ -263,22 +284,22 @@ Variant ConstructionValidator::checkSettingRuleKeyAndReturnValue(Variant const v
     // check min/max limits
     if (sr.minimalValue.isValid() && !checkASmallerThanB(sr.type, sr.minimalValue, value)) {
         error = "Setting for key '"
-                + key + "' and value: " + value.toString()
-                + "is smaller than the allowed min value.";
+                + key + "' and value: '" + value.toString()
+                + "' is smaller than the allowed min value.";
         return Variant();
     }
     if (sr.maximalValue.isValid() && !checkASmallerThanB(sr.type, value, sr.maximalValue)) {
         error = "Setting for key '"
-                + key + "' and value: " + value.toString()
-                + "is bigger than the allowed max value.";
+                + key + "' and value: '" + value.toString()
+                + "' is bigger than the allowed max value.";
         return Variant();
     }
 
     // check max string length
     if (sr.type == Variant::Type::STRING && label_t(value.toString().size()) < sr.minimalStringLength) {
         error = "Setting for key '"
-                + key + "' and value: " + value.toString()
-                + "requires a min string length of "
+                + key + "' and value: '" + value.toString()
+                + "' requires a min string length of "
                 + Utility::toString(sr.minimalStringLength) + ".";
         return Variant();
     }
@@ -286,21 +307,15 @@ Variant ConstructionValidator::checkSettingRuleKeyAndReturnValue(Variant const v
     return value;
 }
 
-/*! \brief Anonymous namespace containing helper functions.
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+namespace {
+/*! \brief Easily access the firs subobject and get the number of key occurences.
  *
- * - 'getFirstSubobjectAndNumberOfKeyOccurences'
  *   Returns a std::pair where the first entry is an iterator pointing to the first subobject referring to the given key
  *   and the second entry says how many subobject cds are available for that key.
- * - 'checkSubobjectRecursivelyAndReturnErrors'
- *   checks a single subobject cd recursevely, i.e. also checks nested subobject inside this subobject and eventually return
- *   an error string. If there are no errors that string is empty.
- * - 'checkSubobjectListRecursevilyAndReturnErrors'
- *   Does the same as 'checkSubobjectRecursivelyAndReturnErrors' however for more than one subobject cd. All subobject cds
- *   refer to the same type to construct.
+ *   If no subobject for the given key is found, this fucntion retrun a past the end iterator.
  */
-namespace {
-
-// If no subobject for the given key is found, this fucntion retrun a past the end iterator.
 template<typename ListType>
 auto getFirstSubobjectAndNumberOfKeyOccurences(ListType const &subobjects, std::string const &key)
 {
@@ -319,6 +334,121 @@ auto getFirstSubobjectAndNumberOfKeyOccurences(ListType const &subobjects, std::
     return result;
 }
 
+/*! \brief Checks a shared ware pointer.
+ *
+ * Function basically checks if the names reference type and its poiter fit together.
+ */
+template<typename ListType>
+std::string checkWareObjectAndReturnErrors(ListType const &wares,
+                                           std::string const &key,
+                                           std::string const &referredTypeName,
+                                           WarelistRule const &warelistrule)
+{
+    if (referredTypeName != warelistrule.type) {
+        return "ware rule for '" + warelistrule.key + "': type mismatch: should be '" + warelistrule.type
+               + "' according to rule, but was passed a named reference to an object of type '" + referredTypeName + "'";
+    }
+
+    auto wareData = getFirstSubobjectAndNumberOfKeyOccurences(wares, key);
+    if (wareData.second == 0) {
+        if (warelistrule.usage == WarelistRule::Usage::MANDATORY) {
+            // clang-format off
+            return "Checking single shared ware for key " +
+                    key +
+                    ": No shared ware object found in construction data.";
+            // clang-format on
+        } else {
+            return "";
+        }
+    }
+
+    if (!wareData.first->second) {
+        return "ware rule for '" + warelistrule.key + "': was passed empty ware pointer with ware key '" + key
+               + "' in the construction data";
+    }
+
+    auto concreteClassName = (wareData.first->second)->getConcreteClassName();
+    if (Factory::isRegisteredInterface(referredTypeName)) {
+        if (!Factory::isRegisteredWithInterface(referredTypeName, concreteClassName)) {
+            return "ware rule for '" + warelistrule.key
+                   + "': type mismatch: object should be an instance of a class derived from '" + warelistrule.type
+                   + "' according to rule, but was passed an object of incorrect type '" + concreteClassName
+                   + "' in the construction data";
+        } else {
+            if (referredTypeName != concreteClassName) {
+                return "ware rule for '" + warelistrule.key + "': type mismatch: should be '" + warelistrule.type
+                       + "' according to rule, but was passed an object of type '" + concreteClassName
+                       + "' in the construction data";
+            }
+        }
+    }
+    return "";
+}
+
+template<typename ListType>
+std::string checkWareListRecursivelyAndReturnErrors(ListType const &wares,
+                                                    std::string const &key,
+                                                    std::string const &referredTypeName,
+                                                    WarelistRule const &warelistrule)
+{
+    if (referredTypeName != warelistrule.type) {
+        return "ware rule for '" + warelistrule.key + "': type mismatch: should be '" + warelistrule.type
+               + "' according to rule, but was passed a named reference to an object of type '" + referredTypeName + "'";
+    }
+
+    auto wareData = getFirstSubobjectAndNumberOfKeyOccurences(wares, key);
+    if (wareData.second == 0) {
+        if (warelistrule.usage == WarelistRule::Usage::MANDATORY) {
+            // clang-format off
+            return "Checking shared ware list for key " +
+                    key +
+                    ": No shared ware object found in construction data.";
+            // clang-format on
+        } else {
+            return "";
+        }
+    }
+    if (warelistrule.length != WarelistRule::lengthNotDefined && static_cast<label_t>(wareData.second) != warelistrule.length) {
+        // clang-format off
+        return "Checking list of shared wares for key " +
+                key +
+                ": The required number of shared wares (" +
+                Utility::toString(warelistrule.length) +
+                ") does not match the actual number:" +
+                Utility::toString(wareData.second) +
+                " inside the given CD shared ware map.";
+        // clang-format on
+    }
+
+    // Recusively check all subobject CDs.
+    for (size_t i = 0; i < wareData.second; ++i) {
+        if (!wareData.first->second) {
+            return "ware rule for '" + warelistrule.key + "': was passed empty ware pointer with ware key '" + key
+                   + "' in the construction data";
+        }
+        auto concreteClassName = (wareData.first->second)->getConcreteClassName();
+        if (Factory::isRegisteredInterface(referredTypeName)) {
+            if (!Factory::isRegisteredWithInterface(referredTypeName, concreteClassName))
+                return "ware list rule for '" + warelistrule.key + "': type mismatch: object '" + key
+                       + ConstructionData::seperator + std::to_string(i) + "' should be an instance of a class derived from '"
+                       + warelistrule.type + "' according to rule, but was passed an object of incorrect type '"
+                       + concreteClassName + "' in the construction data";
+        } else {
+            if (referredTypeName != concreteClassName)
+                return "ware list rule for '" + warelistrule.key + "': type mismatch: object '" + key
+                       + ConstructionData::seperator + std::to_string(i) + "' should be '" + warelistrule.type
+                       + "' according to rule, but was passed an object of type '" + concreteClassName
+                       + "' in the construction data";
+        }
+    }
+    return "";
+}
+
+/*! \brief Check a single subobject.
+ *
+ *   checks a single subobject cd recursevely, i.e. also checks nested subobject inside this subobject and eventually return
+ *   an error string. If there are no errors that string is empty.
+ */
 template<typename ListType>
 std::string checkSubobjectRecursivelyAndReturnErrors(
     ListType const &subojects,          /*container holding all subobject CD at this level*/
@@ -335,7 +465,7 @@ std::string checkSubobjectRecursivelyAndReturnErrors(
             // clang-format off
             return "Checking single subobject for key " +
                     key +
-                    ": No subobject found.";
+                    ": No subobject found in construction data.";
             // clang-format on
         } else {
             return "";
@@ -354,6 +484,11 @@ std::string checkSubobjectRecursivelyAndReturnErrors(
     return "";
 }
 
+/*! \brief Check a list of subobjects.
+ *
+ *   Does the same as 'checkSubobjectRecursivelyAndReturnErrors' however for more than one subobject cd. All subobject cds
+ *   refer to the same type to construct.
+ */
 template<typename ListType>
 std::string checkSubobjectListRecursevilyAndReturnErrors(
     ListType const &subobjects,         /*container holding all subobject CD at this level*/
@@ -406,6 +541,7 @@ std::string checkSubobjectListRecursevilyAndReturnErrors(
 }
 
 } // namespace
+///////////////////////////////////////////////////////////////////////////////////////////////////
 
 std::string ConstructionValidator::checkSettingRuleKeyAndReturnErrors(ConstructionData const &cd, std::string const &key) const
 {
@@ -431,7 +567,7 @@ std::string ConstructionValidator::checkSubObjectAndReturnErrors(ConstructionDat
     }
 
     // check if warelistrule refers to a single object
-    auto wlr = warelistRules_.at(key);
+    auto const &wlr = warelistRules_.at(key);
     if (wlr.length != WarelistRule::lengthSingleton) {
         return "Warelistrule for key '" + key + "' refers to a subobject list. Call 'checkSubobjectListAndReturnErrors' instead.";
     }
@@ -448,10 +584,10 @@ std::string ConstructionValidator::checkSubObjectListAndReturnErrors(Constructio
 
     // Check if a warelistrule really exists for the given key
     if (warelistRules_.find(key) == warelistRules_.cend()) {
-        return "There is no registered warelistrule for key '" + key + "'. It is not possible to validate the subobjects.";
+        return "There is no registered warelistrule for key '" + key + "'. Unable to validate the subobjects.";
     }
 
-    auto wlr = warelistRules_.at(key);
+    auto const &wlr = warelistRules_.at(key);
 
     // Check if there are more then one subobjects building objects of the same type
     if (wlr.length == WarelistRule::lengthSingleton) {
@@ -459,8 +595,38 @@ std::string ConstructionValidator::checkSubObjectListAndReturnErrors(Constructio
     }
 
     // get the subobject's CV and call the recursive template check function.
-    auto &subobjectCV = wlr.callbackCV();
+    auto const &subobjectCV = wlr.callbackCV();
     return checkSubobjectListRecursevilyAndReturnErrors(cd.subObjectData, key, subobjectCV, wlr);
+}
+
+std::string ConstructionValidator::checkSharedWareAndReturnErrors(ConstructionData const &cd,
+                                                                  std::string const &key,
+                                                                  std::string const &referredTypeName) const
+{
+    if (!hasWarelistRule(key)) {
+        return "There is no registered warelistrule for key '" + key + "'. Unable to validate the shared ware.";
+    }
+    auto const &warelistrule = warelistRules_.at(key);
+    if (warelistrule.length != WarelistRule::lengthSingleton) {
+        return "Warelistrule for key '" + key
+               + "' refers to a shared ware list. Call 'checkSharedWareListAndReturnErrors' instead.";
+    }
+    return checkWareObjectAndReturnErrors(cd.sharedWares, key, referredTypeName, warelistrule);
+}
+
+std::string ConstructionValidator::checkSharedWareListAndReturnErrors(ConstructionData const &cd,
+                                                                      std::string const &key,
+                                                                      std::string const &referredTypeName) const
+{
+    if (warelistRules_.find(key) == warelistRules_.cend()) {
+        return "There is no registered warelistrule for key '" + key + "'. Unable to validate the subobjects.";
+    }
+    auto const &warelistrule = warelistRules_.at(key);
+    if (warelistrule.length == WarelistRule::lengthSingleton) {
+        return "Warelistrule for key '" + key
+               + "' refers to a single shared ware. Call 'checkSharedWareAndReturnErrors' instead.";
+    }
+    return checkWareListRecursivelyAndReturnErrors(cd.sharedWares, key, referredTypeName, warelistrule);
 }
 
 Variant ConstructionValidator::validateSettingRuleKeyAndReturnValue(ConstructionData const &cd, std::string const key) const
@@ -512,5 +678,54 @@ std::vector<ConstructionData const *> ConstructionValidator::validateAndReturnSu
         } while (iter != cd.subObjectData.cend());
         return result;
     }
+}
+
+std::string ConstructionValidator::validateSharedWareAndReturnId(ConstructionData const &cd,
+                                                                 std::string const &key,
+                                                                 std::string const &referredTypeName) const
+{
+    std::string error = checkSharedWareAndReturnErrors(cd, key, referredTypeName);
+    if (!error.empty())
+        D_THROW(error);
+    // Return the corresponding id inside construction data's shared wares map.
+    // It was added during call of 'ConstructionData::addSharedWare'.
+    // Remember, here only single shared wares are treated and no lists.
+    return key + ConstructionData::seperator + Utility::toString(0);
+    //return cd.s.value(key + ConstructionData::seperator + Utility::toString(0)).toString();
+}
+
+std::shared_ptr<const Ware> ConstructionValidator::validateSharedWareAndReturnPointer(ConstructionData const &cd,
+                                                                                      std::string const &key,
+                                                                                      std::string const &referredTypeName) const
+{
+    std::string error = checkSharedWareAndReturnErrors(cd, key, referredTypeName);
+    if (!error.empty())
+        D_THROW(error);
+    // Return the corresponding shared pointer inside construction data's shared ware map.
+    // It was added during call of 'ConstructionData::addSharedWare'.
+    // Remember, here only single shared wares are treated and no lists.
+    auto result = cd.sharedWares.find(key + ConstructionData::seperator + Utility::toString(0));
+    if (result != cd.sharedWares.cend()) {
+        return result->second;
+    }
+    return nullptr;
+}
+
+std::vector<std::pair<std::string, std::shared_ptr<const Ware>>> ConstructionValidator::validateSharedListAndReturnValues(
+    ConstructionData const &cd, std::string const &key, std::string const &referredTypeName) const
+{
+    std::string error = checkSharedWareAndReturnErrors(cd, key, referredTypeName);
+    if (!error.empty())
+        D_THROW(error);
+
+    std::vector<std::pair<std::string, std::shared_ptr<const Ware>>> result;
+    for (label_t count = 0;; ++count) {
+        auto keyString = key + ConstructionData::seperator + std::to_string(count);
+        auto wIter = cd.sharedWares.find(keyString);
+        if (wIter == cd.sharedWares.end())
+            break;
+        result.push_back(std::make_pair(cd.s.value(keyString).toString(), wIter->second));
+    }
+    return result;
 }
 } // namespace DUTIL

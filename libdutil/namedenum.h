@@ -155,6 +155,16 @@ public:
         NamedEnumBase(NamedEnumDetail::variantToString(variant))
     {}
 
+    //    NamedEnumBase &operator=(NamedEnumBase const &other)
+    //    {
+    //        if (this != &other) // prevent self-assignment
+    //        {
+    //            var = other.var;
+    //            base = new Foobase(other.GetBaseValue());
+    //        }
+    //        return *this;
+    //    }
+
     /*! \brief Conversion operator
      *
      * Define an implicit conversion operator which converts a NamedEnum value

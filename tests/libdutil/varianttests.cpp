@@ -12,6 +12,44 @@ class VariantTests : public TestBase
 {};
 } // namespace
 
+TEST_F(VariantTests, constructVariantFromCharArrayPointer)
+{
+    std::string str = "Hello World";
+    char *ptr = str.data();
+    Variant v(ptr);
+    ASSERT_EQ(str, v.toString());
+    ASSERT_TRUE(v.isString());
+}
+
+TEST_F(VariantTests, copyAssignVariant)
+{
+    Variant v;
+    {
+        int value = 7;
+        v = value;
+        ASSERT_EQ(value, v.toLabel());
+        ASSERT_TRUE(v.isNumeric());
+    }
+    {
+        double value = 7.7;
+        v = value;
+        ASSERT_EQ(value, v.toReal());
+        ASSERT_TRUE(v.isNumeric());
+    }
+    {
+        bool value = false;
+        v = value;
+        ASSERT_EQ(value, v.toBool());
+        ASSERT_TRUE(v.isBool());
+    }
+    {
+        std::string value = "abcdef";
+        v = value;
+        ASSERT_EQ(value, v.toString());
+        ASSERT_TRUE(v.isString());
+    }
+}
+
 TEST_F(VariantTests, testVariantConstructionWorksAsExpected)
 {
     // construction of monostate variant

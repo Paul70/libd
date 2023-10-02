@@ -31,15 +31,31 @@ ConstructionData &&ConstructionData::set(Settings sNew) &&
     return std::move(*this);
 }
 
-std::string ConstructionData::createSharedWareKeyWithCounter(std::string key) const
+// A key for a shared ware consist of the given input string key plus an optional count value.
+//
+// That makes it possible to register multiple shared ware objects all referring to the
+// same named reference and using the reference name as part of the key.
+std::string ConstructionData::createSharedWareKeyWithCounter(std::string key, std::shared_ptr<const Ware> sharedWarePtr) const
 {
-    return key;
+    label_t count = 0;
+    std::string prefix = key + seperator;
+    for (auto const &iter : sharedWares) {
+        if (iter.second == sharedWarePtr) {
+            // In case, a shared ptr already exists pointing to the same object as
+            // input 'sharedWarePtr' does return the already exsiting key and overwrite the sharedWare entry.
+            break;
+        }
+        if (iter.first.substr(0, prefix.size()) == prefix) {
+            ++count;
+        }
+    }
+    return (prefix + Utility::toString(count));
 }
 
 // A key for a subobject consist of the given input string key plus an optional count value.
 //
-// That makes it possible to register more then one ConstructionData object all referring to the
-// same named reference and using the reference name as key.
+// That makes it possible to register multible construction data objects all referring to the
+// same named reference and using the reference name as part of the key.
 std::string ConstructionData::createSubObjectKeyWithCounter(std::string key) const
 {
     label_t count = 0;

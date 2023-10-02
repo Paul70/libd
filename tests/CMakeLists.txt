@@ -1,13 +1,19 @@
 set(libd_tests_HEADERS
+    cat.h
+    compoundware.h
     testbase.h
     testdummy.h
     testdummyinterface.h
+    zoo.h
 )
 set(libd_tests_SOURCES
+    cat.cpp
+    compoundware.cpp
     main.cpp
     testbase.cpp
     testdummy.cpp
     testdummyinterface.cpp
+    zoo.cpp
     libdutil/basictypestests.cpp
     libdutil/constructiondatatests.cpp
     libdutil/constructionvalidatortests.cpp

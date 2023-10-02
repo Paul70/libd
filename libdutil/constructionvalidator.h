@@ -1,5 +1,7 @@
 #ifndef DUTIL_CONSTRUCTIONVALIDATOR_H
 #define DUTIL_CONSTRUCTIONVALIDATOR_H
+#include "constructiondata.h"
+#include "namedparameter.h"
 #include "settingrule.h"
 #include "warelistrule.h"
 #include <functional>
@@ -8,11 +10,11 @@
 #include <type_traits>
 
 namespace DUTIL {
+class Ware;
 template<class BaseType>
 class FactoryInterface;
 template<class T>
 struct isInterface;
-struct ConstructionData;
 
 /*! \brief description of ConstructionValidator
  *
@@ -63,6 +65,9 @@ public:
     //! Check if a setting rule associated with the given key exists.
     bool hasSettingRule(std::string const &key) const;
 
+    //! Check if a warelist rule associated with the given key exists.
+    bool hasWarelistRule(std::string const &key) const;
+
     //! Return SettingRule object specified by key. If no rule is found, an exception is thrown.
     SettingRule getSettingRule(std::string const &key) const;
 
@@ -72,7 +77,7 @@ public:
     /*! \brief Extraction fucntions.
      *
      * These functions perform a validation before they retrun values or nested ConstructionData
-     * objects from the overall ConstructionData object.
+     * objects from the superior ConstructionData object.
      */
     template<typename NE, std::enable_if_t<std::is_enum_v<typename NE::EnumValues>, bool> = false>
     NE validateNamedEnum(ConstructionData const &cd) const
@@ -86,9 +91,34 @@ public:
     }
 
     template<typename NR>
-    NR validateNamedReference()
+    NR validateNamedReference(ConstructionData const &cd) const
     {
-        return NR();
+        return NR(validateSharedWareAndReturnId(cd, NR::getReferenceName(), NR::getReferredTypeName()));
+    }
+
+    /*! \brief Validate construction data for a shared ware pointer.
+     *
+     * This function ckeck if construction data offer a std::shared_ptr<NR> to initialize a shared ware,
+     * i.e. a shared member pointer.
+     */
+    template<typename NR>
+    auto validateSharedWare(ConstructionData const &cd) const
+    {
+        // call NR constructor to create a NR.
+        return NR(validateSharedWareAndReturnId(cd, NR::getReferenceName(), NR::getReferredTypeName()),
+                  std::static_pointer_cast<const typename NR::RT>(
+                      validateSharedWareAndReturnPointer(cd, NR::getReferenceName(), NR::getReferredTypeName())));
+    }
+
+    template<typename NR>
+    auto validateSharedList(ConstructionData const &cd) const
+    {
+        auto sharedWarePtrVector = validateSharedListAndReturnValues(cd, NR::getReferredTypeName(), NR::getReferenceName());
+        std::vector<NR> resultVector(sharedWarePtrVector.size());
+        std::transform(sharedWarePtrVector.begin(), sharedWarePtrVector.end(), resultVector.begin(), [](auto inputItem) {
+            return NR(inputItem.first, std::static_pointer_cast<const typename NR::RT>(inputItem.second));
+        });
+        return resultVector;
     }
 
     /*! \brief Dynamically create one or more subobjects form nested construction data.
@@ -109,7 +139,7 @@ public:
     auto buildSubObject(ConstructionData const &cd) const -> std::unique_ptr<typename NR::RT>
     {
         // Note, cd refers to the overall and not the the subobject construction data, here.
-        auto subCD = validateAndReturnSubObjectCD(cd, NR::getReferenceName());
+        auto &subCD = validateAndReturnSubObjectCD(cd, NR::getReferenceName());
         if (proxyCheck(subCD)) {
             return nullptr;
         }
@@ -135,16 +165,31 @@ public:
     template<typename NE, std::enable_if_t<std::is_enum_v<typename NE::EnumValues>, bool> = false>
     std::string checkNamedEnum(ConstructionData const &cd) const
     {
-        return checkSettingRuleKeyAndReturnError(cd, NE::getEnumName());
+        return checkSettingRuleKeyAndReturnErrors(cd, NE::getEnumName());
     }
-
+    template<typename NP>
+    std::string checkNamedParameter(ConstructionData const &cd) const
+    {
+        return checkSettingRuleKeyAndReturnErrors(cd, NP::getParameterName());
+    }
     template<typename NR>
     std::string checkSubObject(ConstructionData const &cd) const
     {
         return checkSubObjectAndReturnErrors(cd, NR::getReferenceName());
     }
+    template<typename NR>
+    std::string checkSharedWare(ConstructionData const &cd) const
+    {
+        return checkSharedWareAndReturnErrors(cd, NR::getReferenceName(), NR::getReferredTypeName());
+    }
 
 private:
+    /*! \brief Check function returning settings value.
+     *
+     * Checks the value if it meets all its associated setting rules and in case of success returns the value as
+     * a DUTIL::Variant.
+     * If a setting rule check fails, an MONOSTATE variant object will be returned.
+     */
     Variant checkSettingRuleKeyAndReturnValue(Variant const value, std::string const &key, std::string &error) const;
 
     /*! \brief Check functions.
@@ -156,6 +201,12 @@ private:
     std::string checkSettingRuleKeyAndReturnErrors(ConstructionData const &cd, std::string const &key) const;
     std::string checkSubObjectAndReturnErrors(ConstructionData const &cd, std::string const &key) const;
     std::string checkSubObjectListAndReturnErrors(ConstructionData const &cd, std::string const &key) const;
+    std::string checkSharedWareAndReturnErrors(ConstructionData const &cd,
+                                               std::string const &key,
+                                               std::string const &referredTypeName) const;
+    std::string checkSharedWareListAndReturnErrors(ConstructionData const &cd,
+                                                   std::string const &key,
+                                                   std::string const &referredTypeName) const;
 
     /*! \brief Validation functions.
      *
@@ -168,6 +219,14 @@ private:
     Variant validateSettingRuleKeyAndReturnValue(ConstructionData const &cd, std::string const key) const;
     ConstructionData const &validateAndReturnSubObjectCD(ConstructionData const &cd, std::string const key) const;
     std::vector<ConstructionData const *> validateAndReturnSubobjectCDs(ConstructionData const &cd, std::string const &key) const;
+    std::string validateSharedWareAndReturnId(ConstructionData const &cd,
+                                              std::string const &key,
+                                              std::string const &referredTypeName) const;
+    std::shared_ptr<const Ware> validateSharedWareAndReturnPointer(ConstructionData const &cd,
+                                                                   std::string const &key,
+                                                                   std::string const &referredTypeName) const;
+    std::vector<std::pair<std::string, std::shared_ptr<const Ware>>> validateSharedListAndReturnValues(
+        ConstructionData const &cd, std::string const &key, std::string const &referredTypeName) const;
 
     /*! \brief Helper functions.
      *
