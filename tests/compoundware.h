@@ -1,5 +1,5 @@
-#ifndef DUTIL_COMPOUNDWARE_H
-#define DUTIL_COMPOUNDWARE_H
+#ifndef LIBD_TESTS_COMPOUNDWARE_H
+#define LIBD_TESTS_COMPOUNDWARE_H
 #include "libdutil/concretefactory.h"
 #include "libdutil/namedclass.h"
 #include "libdutil/projectware.h"
@@ -65,4 +65,4 @@ public:
 };
 } // namespace TESTS
 
-#endif // DUTIL_COMPOUNDWARE_H
+#endif // LIBD_TESTS_COMPOUNDWARE_H

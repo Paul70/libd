@@ -36,6 +36,7 @@ public:
     //! Default check function for validating ConstructionData.
     static std::string recursiveCheck(ConstructionValidator const &cv, ConstructionData const &cd);
 
+    //! Check if there is a type setting entry. This is important for constructing new objects via factories.
     static std::string typeSettingCheck(ConstructionData const &cd);
 
     //! Check if the given CD object contains real data or is only used as proxy.
@@ -136,7 +137,7 @@ public:
      *
      */
     template<typename NR>
-    auto buildSubObject(ConstructionData const &cd) const -> std::unique_ptr<typename NR::RT>
+    auto buildSubobject(ConstructionData const &cd) const -> std::unique_ptr<typename NR::RT>
     {
         // Note, cd refers to the overall and not the the subobject construction data, here.
         auto &subCD = validateAndReturnSubObjectCD(cd, NR::getReferenceName());
@@ -173,14 +174,24 @@ public:
         return checkSettingRuleKeyAndReturnErrors(cd, NP::getParameterName());
     }
     template<typename NR>
-    std::string checkSubObject(ConstructionData const &cd) const
+    std::string checkSubobject(ConstructionData const &cd) const
     {
         return checkSubObjectAndReturnErrors(cd, NR::getReferenceName());
+    }
+    template<typename NR>
+    std::string ckeckSubobjectList(ConstructionData const &cd) const
+    {
+        return checkSubObjectListAndReturnErrors(cd, NR::getReferenceName());
     }
     template<typename NR>
     std::string checkSharedWare(ConstructionData const &cd) const
     {
         return checkSharedWareAndReturnErrors(cd, NR::getReferenceName(), NR::getReferredTypeName());
+    }
+    template<typename NR>
+    std::string checkSharedWareList(ConstructionData const &cd) const
+    {
+        return checkSharedWareListAndReturnErrors(cd, NR::getReferenceName(), NR::getReferredTypeName());
     }
 
 private:
@@ -241,6 +252,9 @@ private:
     template<typename WareInterface, std::enable_if_t<isInterface<WareInterface>::value, bool> = false>
     static std::unique_ptr<WareInterface> makeObjectHelper(ConstructionData const &cd)
     {
+        auto error = typeSettingCheck(cd);
+        if (!error.empty())
+            D_THROW(error);
         return FactoryInterface<WareInterface>::newInstanceViaTypeSetting(cd);
     };
 

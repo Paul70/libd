@@ -60,7 +60,7 @@ Zoo::Zoo(ConstructionData const &cd) :
         catmap_.emplace(cat->getName().value(), std::move(cat));
     }
 
-    auto singleCat = getConstructionValidator().buildSubObject<SingleTiger>(cd);
+    auto singleCat = getConstructionValidator().buildSubobject<SingleTiger>(cd);
     if (singleCat) {
         catmap_.emplace(singleCat->getName().value(), std::move(singleCat));
     }

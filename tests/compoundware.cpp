@@ -55,12 +55,19 @@ ConstructionValidator const &CompoundWareC::getConstructionValidator()
             sr.defaultValue = toString(ChoiceC::THE_UGLY);
             return sr;
         }()},
-        {
-            WarelistRule::forSubobjectList<WareAVariableListInstance>("my own variable list of ware A"),
-            WarelistRule::forSharedWareList<WareAVariableListRef>("shared variable list of ware A"),
-            WarelistRule::forSubobjectList<WareAVariableListInstance>("my own fixed list of two ware A", 2),
-            WarelistRule::forSharedWareList<WareAFixedListRef>("shared fixed list of two ware A", 2),
-            WarelistRule::forSubobject<WareBInstance>("my own ware B object")},
+        {[](){
+            WarelistRule wr = WarelistRule::forSubobjectList<WareAVariableListInstance>("my own variable list of ware A");
+            wr.usage = WarelistRule::Usage::OPTIONAL;
+            return wr;
+         }(),
+         [](){
+            WarelistRule wr = WarelistRule::forSharedWareList<WareAVariableListRef>("shared variable list of ware A");
+            wr.usage = WarelistRule::Usage::OPTIONAL;
+            return wr;
+         }(),
+         WarelistRule::forSubobjectList<WareAFixedListInstance>("my own fixed list of two ware A", 2),
+         WarelistRule::forSharedWareList<WareAFixedListRef>("shared fixed list of two ware A", 2),
+         WarelistRule::forSubobject<WareBInstance>("my own ware B object")},
         ProjectWare::getConstructionValidator());
     // clang-format on
     return cv;
@@ -71,6 +78,6 @@ CompoundWareC::CompoundWareC(DUTIL::ConstructionData const &cd) :
     sharedWareAVariableList(getConstructionValidator().validateSharedList<WareAVariableListRef>(cd)),
     ownWareAFixedList(getConstructionValidator().buildSubobjectList<WareAFixedListInstance>(cd)),
     sharedWareAFixedList(getConstructionValidator().validateSharedList<WareAFixedListRef>(cd)),
-    wareB(*getConstructionValidator().buildSubObject<WareBInstance>(cd)),
+    wareB(*getConstructionValidator().buildSubobject<WareBInstance>(cd)),
     cC(getConstructionValidator().validateNamedEnum<ChoiceC>(cd))
 {}

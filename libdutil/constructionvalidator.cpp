@@ -374,12 +374,11 @@ std::string checkWareObjectAndReturnErrors(ListType const &wares,
                    + "': type mismatch: object should be an instance of a class derived from '" + warelistrule.type
                    + "' according to rule, but was passed an object of incorrect type '" + concreteClassName
                    + "' in the construction data";
-        } else {
-            if (referredTypeName != concreteClassName) {
-                return "ware rule for '" + warelistrule.key + "': type mismatch: should be '" + warelistrule.type
-                       + "' according to rule, but was passed an object of type '" + concreteClassName
-                       + "' in the construction data";
-            }
+        }
+    } else {
+        if (referredTypeName != concreteClassName) {
+            return "ware rule for '" + warelistrule.key + "': type mismatch: should be '" + warelistrule.type
+                   + "' according to rule, but was passed an object of type '" + concreteClassName + "' in the construction data";
         }
     }
     return "";
@@ -414,7 +413,7 @@ std::string checkWareListRecursivelyAndReturnErrors(ListType const &wares,
                 key +
                 ": The required number of shared wares (" +
                 Utility::toString(warelistrule.length) +
-                ") does not match the actual number:" +
+                ") does not match the actual number, length mismatch:" +
                 Utility::toString(wareData.second) +
                 " inside the given CD shared ware map.";
         // clang-format on
@@ -428,17 +427,19 @@ std::string checkWareListRecursivelyAndReturnErrors(ListType const &wares,
         }
         auto concreteClassName = (wareData.first->second)->getConcreteClassName();
         if (Factory::isRegisteredInterface(referredTypeName)) {
-            if (!Factory::isRegisteredWithInterface(referredTypeName, concreteClassName))
+            if (!Factory::isRegisteredWithInterface(referredTypeName, concreteClassName)) {
                 return "ware list rule for '" + warelistrule.key + "': type mismatch: object '" + key
                        + ConstructionData::seperator + std::to_string(i) + "' should be an instance of a class derived from '"
                        + warelistrule.type + "' according to rule, but was passed an object of incorrect type '"
                        + concreteClassName + "' in the construction data";
+            }
         } else {
-            if (referredTypeName != concreteClassName)
+            if (referredTypeName != concreteClassName) {
                 return "ware list rule for '" + warelistrule.key + "': type mismatch: object '" + key
                        + ConstructionData::seperator + std::to_string(i) + "' should be '" + warelistrule.type
                        + "' according to rule, but was passed an object of type '" + concreteClassName
                        + "' in the construction data";
+            }
         }
     }
     return "";
@@ -463,9 +464,8 @@ std::string checkSubobjectRecursivelyAndReturnErrors(
     if (subData.second == 0) {
         if (wlr.usage == WarelistRule::Usage::MANDATORY) {
             // clang-format off
-            return "Checking single subobject for key " +
-                    key +
-                    ": No subobject found in construction data.";
+            return "Subobject data for '"
+                   + key + "' was not passed in construction data";
             // clang-format on
         } else {
             return "";
@@ -474,10 +474,6 @@ std::string checkSubobjectRecursivelyAndReturnErrors(
 
     // the actual recusive call which triggers the whole validation process for sub-subobjects
     std::string error = subCV.check(subData.first->second);
-    if (!error.empty()) {
-        return "In subobject data for '" + key + "':\n  " + error;
-    }
-    error = ConstructionValidator::typeSettingCheck(subData.first->second);
     if (!error.empty()) {
         return "In subobject data for '" + key + "':\n  " + error;
     }
@@ -499,6 +495,7 @@ std::string checkSubobjectListRecursevilyAndReturnErrors(
 {
     auto subData = getFirstSubobjectAndNumberOfKeyOccurences(subobjects, key);
 
+    // clang-format off
     // Check if there are enough subobject CDs available if.
     // The Usage::OPTIONAL case is only valid, if there are no subobjects defined at all for the given key.
     // That is, if there are subobject CDs defined, their number has to match the length given in the rule.
@@ -506,25 +503,21 @@ std::string checkSubobjectListRecursevilyAndReturnErrors(
         return "There are not enough subobject CDs for key" + key;
     } else if (subData.second == 0) {
         if (warelistrule.usage == WarelistRule::Usage::MANDATORY) {
-            // clang-format off
             return "Checking list of subobjects for key " +
                     key +
                     ": No subobjects found at all.";
-            // clang-format on
         } else {
             return "";
         }
     } else if (warelistrule.length != WarelistRule::lengthNotDefined
                && static_cast<label_t>(subData.second) != warelistrule.length) {
-        // clang-format off
         return "Checking list of subobjects for key " +
                 key +
                 ": The required number of subobjects (" +
                 Utility::toString(warelistrule.length) +
-                ") does not match the actual number:" +
+                ") does not match the actual number, length mismatch:" +
                 Utility::toString(subData.second) +
                 " inside the given CD.";
-        // clang-format on
     }
 
     // Recusively check all subobject CDs.
@@ -532,11 +525,9 @@ std::string checkSubobjectListRecursevilyAndReturnErrors(
         std::string error = subCV.check(subData.first->second);
         if (!error.empty())
             return "In subobject data for '" + key + "':\n  " + error;
-        error = ConstructionValidator::typeSettingCheck(subData.first->second);
-        if (!error.empty())
-            return "In subobject data for '" + key + "':\n  " + error;
         ++(subData.first);
     }
+    // clang-format on
     return "";
 }
 
@@ -549,7 +540,7 @@ std::string ConstructionValidator::checkSettingRuleKeyAndReturnErrors(Constructi
     auto keyList = cd.s.keys();
     for (auto const &cdKey : keyList) {
         if (cd.s.value(cdKey).isValid() && !hasSettingRule(cdKey)) {
-            return error = "ConstructionData key '" + cdKey + "' does not match any SettingRule key.";
+            return error = "Construction data settings key '" + cdKey + "' does not match any SettingRule key.";
         }
     }
     checkSettingRuleKeyAndReturnValue(cd.s.value(key), key, error);
@@ -569,7 +560,8 @@ std::string ConstructionValidator::checkSubObjectAndReturnErrors(ConstructionDat
     // check if warelistrule refers to a single object
     auto const &wlr = warelistRules_.at(key);
     if (wlr.length != WarelistRule::lengthSingleton) {
-        return "Warelistrule for key '" + key + "' refers to a subobject list. Call 'checkSubobjectListAndReturnErrors' instead.";
+        return "Warelistrule for key '" + key
+               + "' refers to a subobject list and not for a single subobject. Call 'checkSubobjectListAndReturnErrors' instead.";
     }
 
     // get the subobject's CV
@@ -591,7 +583,8 @@ std::string ConstructionValidator::checkSubObjectListAndReturnErrors(Constructio
 
     // Check if there are more then one subobjects building objects of the same type
     if (wlr.length == WarelistRule::lengthSingleton) {
-        return "Warelistrule for key '" + key + "' refers to a single subobject. Call 'checkSubobjectAndReturnErrors' instead.";
+        return "Warelistrule for key '" + key
+               + "' refers to a single subobject and not a list. Call 'checkSubobjectAndReturnErrors' instead.";
     }
 
     // get the subobject's CV and call the recursive template check function.
@@ -609,7 +602,7 @@ std::string ConstructionValidator::checkSharedWareAndReturnErrors(ConstructionDa
     auto const &warelistrule = warelistRules_.at(key);
     if (warelistrule.length != WarelistRule::lengthSingleton) {
         return "Warelistrule for key '" + key
-               + "' refers to a shared ware list. Call 'checkSharedWareListAndReturnErrors' instead.";
+               + "' refers to a shared ware list and not a single ware. Call 'checkSharedWareListAndReturnErrors' instead.";
     }
     return checkWareObjectAndReturnErrors(cd.sharedWares, key, referredTypeName, warelistrule);
 }
@@ -624,7 +617,7 @@ std::string ConstructionValidator::checkSharedWareListAndReturnErrors(Constructi
     auto const &warelistrule = warelistRules_.at(key);
     if (warelistrule.length == WarelistRule::lengthSingleton) {
         return "Warelistrule for key '" + key
-               + "' refers to a single shared ware. Call 'checkSharedWareAndReturnErrors' instead.";
+               + "' refers to a single shared ware and not a list. Call 'checkSharedWareAndReturnErrors' instead.";
     }
     return checkWareListRecursivelyAndReturnErrors(cd.sharedWares, key, referredTypeName, warelistrule);
 }
@@ -687,11 +680,13 @@ std::string ConstructionValidator::validateSharedWareAndReturnId(ConstructionDat
     std::string error = checkSharedWareAndReturnErrors(cd, key, referredTypeName);
     if (!error.empty())
         D_THROW(error);
-    // Return the corresponding id inside construction data's shared wares map.
-    // It was added during call of 'ConstructionData::addSharedWare'.
-    // Remember, here only single shared wares are treated and no lists.
-    return key + ConstructionData::seperator + Utility::toString(0);
-    //return cd.s.value(key + ConstructionData::seperator + Utility::toString(0)).toString();
+
+    // Return named reference ID or empty string if there is no registered ware.´
+    auto variantWare = cd.wareSettings.value(key + ConstructionData::seperator + Utility::toString(0));
+    if (variantWare.isMonostate()) {
+        return "";
+    }
+    return variantWare.toString();
 }
 
 std::shared_ptr<const Ware> ConstructionValidator::validateSharedWareAndReturnPointer(ConstructionData const &cd,

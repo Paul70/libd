@@ -29,6 +29,7 @@ struct ConstructionData
 
     //! Settings class enables a keyword - value dictionary for basic, scalar data.
     Settings s;
+    Settings wareSettings;
 
     //! A std::map for recursevily storing other ConstructionData objects.
     std::map<std::string, ConstructionData> subObjectData;
@@ -102,13 +103,9 @@ struct ConstructionData
     {
         auto key = createSharedWareKeyWithCounter(NR::RT::getReferenceName(), nr.ptr());
 
-        // Next step is crucial for adding shared wares.
-        // Since we have to check if the shared ware fullfills the setting rules and we are dealing with
-        // already constructed objects, do not forget to add all shared ware settings to the construction data settings here.
-        //
-        // Later, during the setting rule check, one will fetch the shares ware's construction validator and check its setting rules.
-        // And we will regain the pointer to initialize shared wares.
-        //s.set(key, nr.ptr());
+        // Next step is crucial for adding shared wares which refer to interface types!
+        //s.set(key, nr.getId());
+        wareSettings.set(key, nr.getId());
         sharedWares.emplace(std::make_pair(key, nr.ptr()));
         return *this;
     }
@@ -118,8 +115,9 @@ struct ConstructionData
     {
         auto key = createSharedWareKeyWithCounter(NR::getReferenceName(), nr.ptr());
 
-        // see the comment in the functio above for an explanation of this step.
-        //s.set(key, nr.ptr());
+        // Next step is crucial for adding shared wares which refer to interface types!
+        //s.set(key, nr.getId());
+        wareSettings.set(key, nr.getId());
         sharedWares.emplace(std::make_pair(key, nr.ptr()));
         return std::move(*this);
     }

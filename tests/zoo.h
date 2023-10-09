@@ -1,5 +1,5 @@
-#ifndef DUTIL_ZOO_H
-#define DUTIL_ZOO_H
+#ifndef LIBD_TESTS_ZOO_H
+#define LIBD_TESTS_ZOO_H
 #include "cat.h"
 
 namespace TESTS {
@@ -43,4 +43,4 @@ private:
 };
 
 } // namespace TESTS
-#endif // DUTIL_ZOO_H
+#endif // LIBD_TESTS_ZOO_H
