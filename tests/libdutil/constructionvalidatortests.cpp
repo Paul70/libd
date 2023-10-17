@@ -21,6 +21,10 @@ D_NAMED_ENUM(Fruits, APPLE, ORANGE, BANANA);
 
 } // namespace
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//! Unit test using class Zoo (zoo.h) and Cat (cat.h) and building a more complex object compoition
+//! with a real world reference
+
 TEST_F(ConstructionValidatorTests, testDefaultConstruction)
 {
     ConstructionData cd;
@@ -161,7 +165,59 @@ TEST_F(ConstructionValidatorTests, testBuildSubobjectList)
     ASSERT_TRUE((z.findCat("JaguarB")));
 }
 
-TEST_F(ConstructionValidatorTests, buildSubobjectList_withValidSubobjectData_works)
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//! Unit test for testing subobjects and subobject lists
+
+TEST_F(ConstructionValidatorTests, buildSubobjectWithOptionalUsage)
+{
+    D_NAMED_REFERENCE(RefToTW, TrivialWare);
+    auto cv = ConstructionValidator({}, {[]() {
+                                        auto wlr = WarelistRule::forSubobject<RefToTW>("unneeded ware");
+                                        wlr.usage = WarelistRule::Usage::OPTIONAL;
+                                        return wlr;
+                                    }()});
+
+    auto tw = cv.buildSubobject<RefToTW>(ConstructionData{});
+    // We want a nullptr back since an empty construction data object cannot build an optional subobject
+    ASSERT_FALSE(bool(tw));
+}
+
+TEST_F(ConstructionValidatorTests, buildSubobjectWithValidSubobjectData)
+{
+    ConstructionData cdA = ConstructionData().setParameter<CompoundWareA::LabelA>(-42);
+    ConstructionData cdB = ConstructionData().addSharedWare(
+        CompoundWareB::WareAPtrRef("wareAPtrRef", std::make_shared<CompoundWareA>(cdA)));
+    ConstructionData cdC = ConstructionData().addSubobject<CompoundWareC::WareBInstance>(cdB);
+
+    auto wareB = CompoundWareC::getConstructionValidator().buildSubobject<CompoundWareC::WareBInstance>(cdC);
+    ASSERT_TRUE(wareB);
+    ASSERT_EQ(-42, wareB->wareARef->lA);
+}
+
+TEST_F(ConstructionValidatorTests, buildSubobjectForInterfaceClass)
+{
+    D_NAMED_REFERENCE(InterfaceObject, Base);
+    ConstructionValidator cv({}, {WarelistRule::forSubobject<InterfaceObject>("interface object")});
+
+    auto cd = ConstructionData().addSubobject<InterfaceObject>(
+        ConstructionData()
+            .setConcreteClassParameter<DerivedA>()
+            .setParameter<DerivedA::DerivedAInt>(42)
+            .addSharedWare(Base::BaseWareAReference("baseWareA",
+                                                    std::make_shared<CompoundWareA>(
+                                                        ConstructionData().setParameter<CompoundWareA::LabelA>(13))))
+            .addSubobject<Base::BaseWareAInstance>(ConstructionData().setParameter<CompoundWareA::LabelA>(17)));
+
+    auto base = cv.buildSubobject<InterfaceObject>(cd);
+    ASSERT_TRUE(bool(base));
+    auto wareA = static_unique_ptr_cast<DerivedA>(std::move(base));
+    ASSERT_TRUE(bool(wareA));
+    ASSERT_EQ(42, wareA->id);
+}
+
+TEST_F(ConstructionValidatorTests, buildSubobjectListWithValidSubobjectData)
 {
     // clang-format off
     ConstructionData cdA1 = ConstructionData().setParameter<CompoundWareA::LabelA>(1);
@@ -176,6 +232,11 @@ TEST_F(ConstructionValidatorTests, buildSubobjectList_withValidSubobjectData_wor
     ASSERT_EQ(1, wareAList[0]->lA);
     ASSERT_EQ(2, wareAList[1]->lA);
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//! Unit test for testing all check fucntions
 
 TEST_F(ConstructionValidatorTests, checkNamedEnum)
 {
@@ -238,73 +299,6 @@ TEST_F(ConstructionValidatorTests, checkSharedWareMissingRuleReturnsError)
     EXPECT_THAT(errors,
                 testing::HasSubstr(
                     "There is no registered warelistrule for key 'TrivialReference'. Unable to validate the shared ware."));
-}
-
-TEST_F(ConstructionValidatorTests, validateNamedParameterForReal)
-{
-    ConstructionValidator cv({SettingRule::forNamedParameter<RealParam>(SettingRule::Usage::OPTIONAL, "a real parameter")});
-    RealParam rp = -42.3;
-    ConstructionData cd = ConstructionData().setParameter(rp);
-    ASSERT_EQ(-42.3, cv.validateNamedParameter<RealParam>(cd).value());
-}
-
-TEST_F(ConstructionValidatorTests, validateNamedParameterForStringWorks)
-{
-    SettingRule sr = SettingRule::forNamedParameter<StringParam>(SettingRule::Usage::OPTIONAL, "a string parameter");
-    sr.minimalStringLength = 5;
-    sr.defaultValue = "12345";
-    ConstructionValidator cv({sr});
-    StringParam sp("abcdef");
-
-    ConstructionData cd = ConstructionData().setParameter(sp);
-    ASSERT_EQ(std::string("abcdef"), cv.validateNamedParameter<StringParam>(cd).value());
-    // check if we get the default value.
-    std::cout << sr.defaultValue.toString() << std::endl;
-    ASSERT_EQ(std::string("12345"), cv.validateNamedParameter<StringParam>(ConstructionData()).value());
-}
-
-TEST_F(ConstructionValidatorTests, validateNamedReferenceWithReferenceToInterface)
-{
-    auto wlr = WarelistRule::forSharedWare<BaseReference>("a reference to base");
-    ConstructionValidator cv({}, {wlr});
-
-    ConstructionData cdDerived = ConstructionData().setParameter<DerivedA::DerivedAInt>(421);
-    ConstructionData cdBase = ConstructionData().addSharedWare(BaseReference("derivedA0", std::make_shared<DerivedA>(cdDerived)));
-
-    ASSERT_EQ("derivedA0", cv.validateNamedReference<BaseReference>(cdBase).getId());
-}
-
-TEST_F(ConstructionValidatorTests, validateSharedWareWithValidObject)
-{
-    ConstructionData cdA = ConstructionData().setParameter<CompoundWareA::LabelA>(-42);
-    ConstructionData cdB = ConstructionData().addSharedWare(
-        CompoundWareB::WareAPtrRef("wareAPtrRef", std::make_shared<CompoundWareA>(cdA)));
-    auto wareA = CompoundWareB::getConstructionValidator().validateSharedWare<CompoundWareB::WareAPtrRef>(cdB);
-    ASSERT_TRUE(bool(wareA.ptr()));
-    ASSERT_EQ(-42, wareA->lA);
-}
-
-TEST_F(ConstructionValidatorTests, validateSharedWareWithOptionalUsage)
-{
-    auto modifiedCV = ConstructionValidator({},
-                                            {[]() {
-                                                auto wlr = WarelistRule::forSharedWare<CompoundWareB::WareAPtrRef>(
-                                                    "pointer to const ware A");
-                                                wlr.usage = WarelistRule::Usage::OPTIONAL;
-                                                return wlr;
-                                            }()},
-                                            CompoundWareB::getConstructionValidator());
-    ConstructionData cdB;
-    ASSERT_EQ("", modifiedCV.checkSharedWare<CompoundWareB::WareAPtrRef>(cdB));
-    auto wareA = modifiedCV.validateSharedWare<CompoundWareB::WareAPtrRef>(cdB);
-    ASSERT_FALSE(bool(wareA.ptr()));
-
-    auto cdA = ConstructionData().setParameter<CompoundWareA::LabelA>(-42);
-    cdB = ConstructionData().addSharedWare(CompoundWareB::WareAPtrRef("wareAPtrRef", std::make_shared<CompoundWareA>(cdA)));
-    ASSERT_EQ("", modifiedCV.checkSharedWare<CompoundWareB::WareAPtrRef>(cdB));
-    wareA = modifiedCV.validateSharedWare<CompoundWareB::WareAPtrRef>(cdB);
-    ASSERT_TRUE(bool(wareA.ptr()));
-    ASSERT_EQ(-42, wareA->lA);
 }
 
 TEST_F(ConstructionValidatorTests, checkSharedListRuleIsforSharedWareReturnsError)
@@ -455,3 +449,133 @@ TEST_F(ConstructionValidatorTests, checkForInterfaceClass)
 
     ASSERT_TRUE(cv.check(cdBase).empty());
 }
+
+TEST_F(ConstructionValidatorTests, checkSharedListNErrorsReturnsEmptyString)
+{
+    ConstructionData cdA0 = ConstructionData().setParameter<CompoundWareA::LabelA>(177);
+    ConstructionData cdC = ConstructionData()
+                               .addSharedWare(CompoundWareC::WareAFixedListRef("A0", std::make_shared<CompoundWareA>(cdA0)))
+                               .addSharedWare(CompoundWareC::WareAFixedListRef("A1", std::make_shared<CompoundWareA>(cdA0)));
+
+    auto errors = CompoundWareC::getConstructionValidator().checkSharedWareList<CompoundWareC::WareAFixedListRef>(cdC);
+    ASSERT_TRUE(errors.empty());
+}
+
+TEST_F(ConstructionValidatorTests, checkSharedListWarePointerTypeIsNotDerivedFromInterfaceReturnsError)
+{
+    auto wlr = WarelistRule::forSharedWareList<BaseReference>("a list of Base");
+    ConstructionValidator cv({}, {wlr});
+
+    ConstructionData cdBase;
+    auto newKey = cdBase.createSharedWareKeyWithCounter(BaseReference::getReferenceName(), nullptr);
+    cdBase.sharedWares[newKey] = std::make_shared<const TrivialWare>();
+    auto errors = cv.checkSharedWareList<BaseReference>(cdBase);
+    EXPECT_THAT(errors,
+                testing::HasSubstr("ware list rule for 'BaseReference': type mismatch: object 'BaseReference;0' should be an "
+                                   "instance of a class derived from '"
+                                   + FactoryInterface<Base>::getInterfaceName()
+                                   + "' according to rule, but was passed an object of incorrect type '"
+                                   + TrivialWare::getClassName() + "' in the construction data"));
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//! Unit test for testing all validation functions
+
+TEST_F(ConstructionValidatorTests, validateNamedEnum)
+{
+    ConstructionValidator cv({SettingRule::forNamedEnum<Fruits>(SettingRule::Usage::OPTIONAL, "a container for fruits")});
+    ConstructionData cd = ConstructionData().setEnum(Fruits::ORANGE);
+    ASSERT_EQ(Fruits::ORANGE, cv.validateNamedEnum<Fruits>(cd).value());
+}
+
+TEST_F(ConstructionValidatorTests, validateNamedParameterForLabel)
+{
+    ConstructionValidator cv({SettingRule::forNamedParameter<LabelParam>(SettingRule::Usage::OPTIONAL, "a label parameter")});
+    LabelParam lp = 17;
+    ConstructionData cd = ConstructionData().setParameter(lp);
+    ASSERT_EQ(17, cv.validateNamedParameter<LabelParam>(cd).value());
+}
+
+TEST_F(ConstructionValidatorTests, validateNamedParameterForReal)
+{
+    ConstructionValidator cv({SettingRule::forNamedParameter<RealParam>(SettingRule::Usage::OPTIONAL, "a real parameter")});
+    RealParam rp = -42.3;
+    ConstructionData cd = ConstructionData().setParameter(rp);
+    ASSERT_EQ(-42.3, cv.validateNamedParameter<RealParam>(cd).value());
+}
+
+TEST_F(ConstructionValidatorTests, validateNamedParameterForStringWorks)
+{
+    SettingRule sr = SettingRule::forNamedParameter<StringParam>(SettingRule::Usage::OPTIONAL, "a string parameter");
+    sr.minimalStringLength = 5;
+    sr.defaultValue = "12345";
+    ConstructionValidator cv({sr});
+    StringParam sp("abcdef");
+
+    ConstructionData cd = ConstructionData().setParameter(sp);
+    ASSERT_EQ(std::string("abcdef"), cv.validateNamedParameter<StringParam>(cd).value());
+    // check if we get the default value.
+    std::cout << sr.defaultValue.toString() << std::endl;
+    ASSERT_EQ(std::string("12345"), cv.validateNamedParameter<StringParam>(ConstructionData()).value());
+}
+
+TEST_F(ConstructionValidatorTests, validateSharedWareWithReferenceToInterface)
+{
+    auto wlr = WarelistRule::forSharedWare<BaseReference>("a reference to base");
+    ConstructionValidator cv({}, {wlr});
+
+    ConstructionData cdDerived = ConstructionData().setParameter<DerivedA::DerivedAInt>(421);
+    ConstructionData cdBase = ConstructionData().addSharedWare(BaseReference("derivedA0", std::make_shared<DerivedA>(cdDerived)));
+
+    auto pA = cv.validateSharedWare<BaseReference>(cdBase);
+    ASSERT_TRUE(bool(pA.ptr()));
+    ASSERT_EQ(421, std::static_pointer_cast<const DerivedA>(BaseReference::Pointer(pA))->id);
+}
+
+TEST_F(ConstructionValidatorTests, validateNamedReferenceWithReferenceToInterface)
+{
+    auto wlr = WarelistRule::forSharedWare<BaseReference>("a reference to base");
+    ConstructionValidator cv({}, {wlr});
+
+    ConstructionData cdDerived = ConstructionData().setParameter<DerivedA::DerivedAInt>(421);
+    ConstructionData cdBase = ConstructionData().addSharedWare(BaseReference("derivedA0", std::make_shared<DerivedA>(cdDerived)));
+
+    ASSERT_EQ("derivedA0", cv.validateNamedReference<BaseReference>(cdBase).getId());
+}
+
+TEST_F(ConstructionValidatorTests, validateSharedWareWithValidObject)
+{
+    ConstructionData cdA = ConstructionData().setParameter<CompoundWareA::LabelA>(-42);
+    ConstructionData cdB = ConstructionData().addSharedWare(
+        CompoundWareB::WareAPtrRef("wareAPtrRef", std::make_shared<CompoundWareA>(cdA)));
+    auto wareA = CompoundWareB::getConstructionValidator().validateSharedWare<CompoundWareB::WareAPtrRef>(cdB);
+    ASSERT_TRUE(bool(wareA.ptr()));
+    ASSERT_EQ(-42, wareA->lA);
+}
+
+TEST_F(ConstructionValidatorTests, validateSharedWareWithOptionalUsage)
+{
+    auto modifiedCV = ConstructionValidator({},
+                                            {[]() {
+                                                auto wlr = WarelistRule::forSharedWare<CompoundWareB::WareAPtrRef>(
+                                                    "pointer to const ware A");
+                                                wlr.usage = WarelistRule::Usage::OPTIONAL;
+                                                return wlr;
+                                            }()},
+                                            CompoundWareB::getConstructionValidator());
+    ConstructionData cdB;
+    ASSERT_EQ("", modifiedCV.checkSharedWare<CompoundWareB::WareAPtrRef>(cdB));
+    auto wareA = modifiedCV.validateSharedWare<CompoundWareB::WareAPtrRef>(cdB);
+    ASSERT_FALSE(bool(wareA.ptr()));
+
+    auto cdA = ConstructionData().setParameter<CompoundWareA::LabelA>(-42);
+    cdB = ConstructionData().addSharedWare(CompoundWareB::WareAPtrRef("wareAPtrRef", std::make_shared<CompoundWareA>(cdA)));
+    ASSERT_EQ("", modifiedCV.checkSharedWare<CompoundWareB::WareAPtrRef>(cdB));
+    wareA = modifiedCV.validateSharedWare<CompoundWareB::WareAPtrRef>(cdB);
+    ASSERT_TRUE(bool(wareA.ptr()));
+    ASSERT_EQ(-42, wareA->lA);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -161,15 +161,3 @@ TEST_F(FactoryTests, testCheckDuringFactoryConstructionIsOK)
     auto newTD = static_unique_ptr_cast<TestDummy, ProjectWare>(std::move(newPW));
     ASSERT_EQ(newTD->getNamedEnum(), TestDummy::COLOR::GREEN);
 }
-
-TEST_F(FactoryTests, testCheckDuringFactoryConstructionFails)
-{
-    // clang-format off
-    D_EXPECT_THROW(FactoryInterface<DUTIL::ProjectWare>::newInstanceViaTypeSetting(
-        ConstructionData()
-                .setConcreteClassParameter<TestDummy>()
-                .setEnum<TestDummy::WEEKDAY>(TestDummy::WEEKDAY::SUNDAY)),
-    "error happend in std::unique_ptr<DUTIL::Ware> "
-    "DUTIL::FactoryInterfaceDetail::newInstanceViaTypeSetting(const DUTIL::ConstructionData&, std::string)");
-    // clang-format on
-}

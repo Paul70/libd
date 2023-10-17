@@ -24,7 +24,8 @@ ConstructionValidator const &Base::getConstructionValidator()
                                           {
                                               WarelistRule::forSharedWare<BaseWareAReference>("reference to const ware A"),
                                               WarelistRule::forSubobject<BaseWareAInstance>("my own ware A"),
-                                          });
+                                          },
+                                          ProjectWare::getConstructionValidator());
 
     return cv;
 }

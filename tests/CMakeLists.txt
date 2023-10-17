@@ -21,6 +21,8 @@ set(libd_tests_SOURCES
     libdutil/basictypestests.cpp
     libdutil/constructiondatatests.cpp
     libdutil/constructionvalidatortests.cpp
+    libdutil/datasettests.cpp
+    libdutil/factoryinterfacetests.cpp
     libdutil/factorytests.cpp
     libdutil/loggingtests.cpp
     libdutil/namedclasstests.cpp

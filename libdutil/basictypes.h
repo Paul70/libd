@@ -35,6 +35,20 @@ struct is_string :
 template<typename T>
 constexpr bool is_string_v = is_string<T>::value;
 
+/*! \brief Check if the given size fits in a label.
+ *
+ * Throw an exception otherwise.
+ */
+void d_check_size(std::uint64_t size);
+
+//! Return size of a container converted to a label.
+template<typename T>
+label_t d_size(T const &v)
+{
+    d_check_size(v.size());
+    return static_cast<label_t>(v.size());
+}
+
 } // namespace BasicTypes
 } // namespace DUTIL
 #endif // DUTIL_BASICTYPES_H

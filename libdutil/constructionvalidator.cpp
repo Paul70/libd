@@ -538,10 +538,13 @@ std::string ConstructionValidator::checkSettingRuleKeyAndReturnErrors(Constructi
 {
     std::string error;
     auto keyList = cd.s.keys();
-    for (auto const &cdKey : keyList) {
-        if (cd.s.value(cdKey).isValid() && !hasSettingRule(cdKey)) {
-            return error = "Construction data settings key '" + cdKey + "' does not match any SettingRule key.";
+    auto cdKey = std::find(keyList.cbegin(), keyList.cend(), key);
+    if (cdKey != keyList.cend()) {
+        //for (auto const &cdKey : keyList) {
+        if (cd.s.value(key).isValid() && !hasSettingRule(key)) {
+            return error = "Construction data settings key '" + key + "' does not match any SettingRule key.";
         }
+        //}
     }
     checkSettingRuleKeyAndReturnValue(cd.s.value(key), key, error);
     return error;
