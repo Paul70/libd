@@ -1,3 +1,10 @@
+# folders
+/build
+
+# explicit file names
+CMakeUserPresets.json
+
+# file categories
 *.txt.user
 *.bkp
 *.dtmp

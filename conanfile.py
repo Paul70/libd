@@ -1,44 +1,96 @@
 from conan import ConanFile
 from conan.tools.cmake import CMake, CMakeDeps, CMakeToolchain, cmake_layout
-from conan.tools.files import get
+#from conan.tools.files import get
 import sys
 
-# this check needs a conan version >= 1.28
-required_conan_version = ">=1.43.0"                                             
+
+required_conan_version = ">=2.0.0"
 
 class LibdRecipe(ConanFile):
+
+    # Package binray configuration and metadata
+    # Settings: project-wide configuration that cannot be defaulted in recipes
+    #           See alos devopsfile.py which maintains settings
+    # Options:  package-specific configurations which can be defaulted in recipes (no operating 
+    #           related settings)
     name = "libd"
     version = "0.1.0"
-    package_type = "shared library"
-
-    ###############################################################################################
-    #
-    # Package metadata
-    #
-    ###############################################################################################
+    package_type = "shared-library"
     author = "Paul Heidenreich"
     description = "libd - Simulation Laboratory for Stock evaluation and prediction"
-
-    ###############################################################################################
-    #
-    # Binary configuration - set only options which have a default value.
-    # Settings: project-wide configuration that cannot be defaulted in recipes
-    # Options: package-specific configuration and can be defaulted in recipes 
-    #
-    ###############################################################################################
-    no_copy_source = True
+    license = ""
+    url = ""
     settings = "os", "compiler", "build_type", "arch" 
     options = {
         "shared": [True, False],
-        "fPIC": [True, False],
-        "default_config": [True, False],
-        "project_config_id": ["ANY"],
-        "use_cached_cmake": [True, False],
+        "fPIC": [True, False]
     } 
     default_options = {
-        "shared": False,
-        "fPIC": True,
-        "default_config": False,
-        "project_config_id": 2,
-        "use_cached_cmake": True,
-    }          
+        "shared": True,
+        "fPIC": True
+    }
+
+    no_copy_source = True
+
+    
+    # Requirements for build (tool_requires) and host (requires) context 
+    def requirements(self):
+        pass
+
+    def build_requirements(self):
+        self.tool_requires("cmake/3.27.7")
+        self.tool_requires("ninja/1.11.1")
+        pass
+
+    
+    # Packaging - how to build this package 
+    def config_options(self):
+        self.conanfilePrint("conanfile.py ("+ self.name +"/" + self.version+"): Calling config_options()")
+        if self.settings.os == "Windows":
+            del self.options.fPIC
+        pass
+
+    def layout(self):
+        cmake_layout(self)
+        pass
+
+    def generate(self):
+        deps = CMakeDeps(self)
+        deps.generate()
+
+        tc = CMakeToolchain(self, generator="Ninja")
+        tc.generate()
+        pass
+
+    def build(self):
+        cmake = CMake(self)
+        cmake.configure()
+
+        # Actual cmake call ("cmake -DC...=conan_toolchain.cmake") happens here
+        cmake.build()        
+        pass
+
+    def package(self):
+        cmake = CMake(self)
+        cmake.install()
+        pass
+
+    def package_info(self):
+        self.cpp_info.libs = [
+            "dutil"
+        ]
+
+        pass
+
+
+    ###############################################################################################
+    #
+    # Helper methods used in this conanfile 
+    #
+    ###############################################################################################
+
+    # we print to stderr since we do not want to alter conan fucntion stdoout output
+    def conanfilePrint(self, string):
+        print(string, file=sys.stderr)
+        pass
+    
