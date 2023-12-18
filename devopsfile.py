@@ -1,4 +1,5 @@
 #! /usr/bin/python3
+import sys
 import subprocess
 
 
@@ -49,8 +50,22 @@ class libdDevOpsRecipe():
             subprocess.run([cmd], shell = True, capture_output = False, text = False)
         pass
 
+    def build(self):
+        print("This will be the build method call ...")
+
 
 ###################################################################################################
+dev = libdDevOpsRecipe()
+def generate():
+    dev.generate()
+def build():
+    dev.build()
 
-dev = libdDevOpsRecipe() 
-dev.generate()
+
+# args[0] = current file
+# args[1] = function name
+# args[2:] = function args : (*unpacked)
+if __name__ == "__main__":
+    args = sys.argv
+    globals()[args[1]](*args[2:])
+
