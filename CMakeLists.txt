@@ -3,30 +3,32 @@ cmake_minimum_required(VERSION 3.13)
 if(NOT PROJECT_NAME)
     project(libd
             VERSION 0.1.0
-            DESCRIPTION "C++ developement infrastructure library"
-            LANGUAGES C CXX)
+            DESCRIPTION "C++ developement library"
+            LANGUAGES C CXX
+    )
 endif()
 
-# Global options for libd project. Have to be set before loading cmake modules.
+# Global options libd project
 option(BUILD_LIBD_TESTS "Build libd Googletest test suite and use Googletest system installation" ON)
 option(BUILD_LIBD_TESTS_AND_GOOGLETEST "Build libd Googletest test suite and Googletest framework itsself" OFF)
-option(USE_CXX_20 "Enable C++ 20 features. Option gets deactivated if the compiler does not support C++ 20." OFF)
+
+if(BUILD_LIBD_TESTS)
+    message(STATUS "libd CMakeLists.txt: option BUILD_LIBD_TESTS = ON")
+elseif(BUILD_LIBD_TESTS_AND_GOOGLETEST)
+    message(STATUS "libd CMakeLists.txt: option BUILD_LIBD_TESTS_AND_GOOGLETEST on")
+endif()
 
 # Check for parent cmake projects.
+# Only include cmake modules if this is the top level CMakeLists.txt.
 get_directory_property(HAS_PARENT PARENT_DIRECTORY)
-
 if(NOT HAS_PARENT)
-    # If this is the top leve CmakeLists.txt then include Cmake modules.
-    # That should always happen in the top most project.
-    message(STATUS "Loading CMake modules")
+    message(STATUS "libd CMakeLists.txt: loading CMake modules from: ${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
     list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules)
     include(HelperFunctions)
     include(LibdDefaultConfig)
     include(ConfigureBuildPaths)
+    include(GenerateVersion)
 endif()
-
-# Internal options depending on LibdDefaultConfig module
-option(BUILD_SHARED_LIBS "Build all libraries as shared libs unless it is defined ohterwise" ${D_DEFAULT_BUILD_SHARED_LIBS})
 
 add_subdirectory(libdglobals)
 add_subdirectory(libdutil)
@@ -37,7 +39,7 @@ if(BUILD_LIBD_TESTS)
 endif()
 if(BUILD_LIBD_TESTS_AND_GOOGLETEST)
     set(BUILD_LIBD_TESTS OFF)
-    add_compile_options(-Wno-error)
+    d_add_compile_flag(-Wno-error "libd CMakeLists.txt")
     add_subdirectory(thirdparty/googletest)
     add_subdirectory(tests)
 endif()
