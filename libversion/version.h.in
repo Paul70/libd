@@ -1,0 +1,15 @@
+#ifndef LIBD_VERSION_H_IN
+#define LIBD_VERSION_H_IN
+
+// To understand what is happening here, see cmake 'conifgure_file' documentation
+// and GenerateVersion.cmake module.
+
+// Set preprocessor variables for current Git version, tag and hash
+// of this project. Information gets re-genreated after each run of cmake.
+
+#cmakedefine LIBD_CURRENT_GIT_VERSION "@LIBD_CURRENT_GIT_VERSION@"
+#cmakedefine LIBD_LATEST_GIT_TAG "@LIBD_LATEST_GIT_TAG@"
+#cmakedefine LIBD_CURRENT_GIT_COMMIT_HASH "@LIBD_CURRENT_GIT_COMMIT_HASH@"
+#cmakedefine LIBD_CURRENT_GIT_COMMIT_TIME "@LIBD_CURRENT_GIT_COMMIT_TIME@"
+
+#endif // LIBD_VERSION_H_IN

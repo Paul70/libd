@@ -33,6 +33,7 @@ set(libd_tests_SOURCES
     libdutil/settingstests.cpp
     libdutil/utilitytests.cpp
     libdutil/varianttests.cpp
+    libdutil/versiontests.cpp
     libdutil/waretests.cpp
 )
 
@@ -51,6 +52,7 @@ target_include_directories(libd_tests PUBLIC
 target_link_libraries(libd_tests PUBLIC
     dglobals
     dutil
+    dversion
 )
 
 # External library dependencies
@@ -59,5 +61,3 @@ target_link_libraries(libd_tests PUBLIC
     gmock
     pthread
 )
-
-

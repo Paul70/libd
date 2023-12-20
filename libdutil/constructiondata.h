@@ -1,8 +1,6 @@
 #ifndef DUTIL_CONSTRUCTIONDATA_H
 #define DUTIL_CONSTRUCTIONDATA_H
-#include "settingrule.h"
 #include "settings.h"
-#include "types.h"
 #include <memory>
 
 namespace DUTIL {

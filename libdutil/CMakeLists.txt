@@ -50,7 +50,7 @@ set(dutil_SOURCES
     warelistrule.cpp
 )
 
-add_library(dutil)
+add_library(dutil SHARED)
 target_sources(dutil PRIVATE
     ${dutil_HEADERS}
     ${dutil_SOURCES}
@@ -61,3 +61,5 @@ target_include_directories(dutil PRIVATE
     ../..
 )
 target_link_libraries(dutil PUBLIC dglobals)
+
+
