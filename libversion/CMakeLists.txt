@@ -10,14 +10,7 @@ add_custom_target(LibdGitVersion
     COMMENT "libversion CMakeLists.txt: building dversion target to include version.h."
 )
 
-message(STATUS "${LIBD_CURRENT_GIT_VERSION}")
-message(STATUS "${LIBD_LATEST_GIT_TAG}")
-message(STATUS "${LIBD_CURRENT_GIT_COMMIT_HASH}")
-message(STATUS "${LIBD_CURRENT_GIT_COMMIT_TIME}")
-
-
 add_dependencies(dversion LibdGitVersion)
 target_include_directories(dversion INTERFACE ${CMAKE_CURRENT_BINARY_DIR})
 
-#configure_file(version.h.in version.h)
 

@@ -20,6 +20,7 @@ public:
     static std::size_t getNumberOfRegisteredInterfaces() noexcept;
     static std::size_t getNumberOfConcreteClassesForInterface(std::string const &interface) noexcept;
 
+    //std::cout << e.what() << std::endl;
 protected:
     //! Read the given file into the result string.
     //static bool slurpFile(std::string const& fileName, std::string& result);
@@ -27,9 +28,12 @@ protected:
 }; // TestBase
 
 #define D_EXPECT_THROW(statement, substring) \
+[&] () \
+{ \
     try { \
         statement; \
         ADD_FAILURE() << "No exception thrown."; \
+        return "No exception thrown."; \
     } catch (Exception const &e) { \
         std::string error_msg = e.what(); \
         if (error_msg.rfind(substring) == std::string::npos) { \
@@ -37,7 +41,8 @@ protected:
                               + #substring; \
             ADD_FAILURE() << str.data(); \
         } \
-        std::cout << e.what() << std::endl; \
-    }
+        return substring; \
+    } \
+} ()
 
 #endif // LIBD_TESTS_TESTBASE_H

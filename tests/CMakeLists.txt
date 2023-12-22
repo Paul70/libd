@@ -37,6 +37,8 @@ set(libd_tests_SOURCES
     libdutil/waretests.cpp
 )
 
+find_package(GTest CONFIG REQUIRED)
+
 add_executable(libd_tests)
 target_sources(libd_tests PRIVATE
     ${libd_tests_HEADERS}
@@ -47,17 +49,11 @@ target_include_directories(libd_tests PUBLIC
     ..
     ../..
 )
-
-# Internal library dependencies
 target_link_libraries(libd_tests PUBLIC
+    GTest::gtest
+    GTest::gmock
     dglobals
     dutil
     dversion
 )
 
-# External library dependencies
-target_link_libraries(libd_tests PUBLIC
-    gtest
-    gmock
-    pthread
-)

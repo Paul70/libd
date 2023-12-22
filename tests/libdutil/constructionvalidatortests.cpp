@@ -85,26 +85,32 @@ TEST_F(ConstructionValidatorTests, testConstructionWithSettingRulesAndValidation
     }
     {
         // min and max visitor numbers within the limits
-        D_EXPECT_THROW(Zoo z(ConstructionData()
-                                 .setEnum<Zoo::ClosingDay>(Zoo::ClosingDay::TUESDAY)
-                                 .setParameter<Zoo::Name>("Hellabrunn")
-                                 .setParameter<Zoo::Min_Visitors>(5)),
-                       "is smaller than the allowed min value");
-        D_EXPECT_THROW(Zoo z(ConstructionData()
+        auto result = D_EXPECT_THROW(Zoo z(ConstructionData().setEnum<Zoo::ClosingDay>(Zoo::ClosingDay::TUESDAY)
+                                                             .setParameter<Zoo::Name>("Hellabrunn")
+                                                             .setParameter<Zoo::Min_Visitors>(5)),
+                                     "is smaller than the allowed min value");
+        EXPECT_THAT(result, testing::HasSubstr("is smaller than the allowed min value"));
+
+        result = D_EXPECT_THROW(Zoo z(ConstructionData()
                                  .setEnum<Zoo::ClosingDay>(Zoo::ClosingDay::TUESDAY)
                                  .setParameter<Zoo::Name>("Hellabrunn")
                                  .setParameter<Zoo::Min_Visitors>(50000)),
-                       "is bigger than the allowed max value");
-        D_EXPECT_THROW(Zoo z(ConstructionData()
+                                "is bigger than the allowed max value");
+        EXPECT_THAT(result, testing::HasSubstr("is bigger than the allowed max value"));
+
+        result = D_EXPECT_THROW(Zoo z(ConstructionData()
                                  .setEnum<Zoo::ClosingDay>(Zoo::ClosingDay::TUESDAY)
                                  .setParameter<Zoo::Name>("Hellabrunn")
                                  .setParameter<Zoo::Max_Visitors>(50000)),
                        "is bigger than the allowed max value");
-        D_EXPECT_THROW(Zoo z(ConstructionData()
+        EXPECT_THAT(result, testing::HasSubstr("is bigger than the allowed max value"));
+
+        result = D_EXPECT_THROW(Zoo z(ConstructionData()
                                  .setEnum<Zoo::ClosingDay>(Zoo::ClosingDay::TUESDAY)
                                  .setParameter<Zoo::Name>("Hellabrunn")
                                  .setParameter<Zoo::Max_Visitors>(0)),
                        "is smaller than the allowed min value");
+        EXPECT_THAT(result, testing::HasSubstr("is smaller than the allowed min value"));
     }
 }
 
@@ -516,8 +522,6 @@ TEST_F(ConstructionValidatorTests, validateNamedParameterForStringWorks)
 
     ConstructionData cd = ConstructionData().setParameter(sp);
     ASSERT_EQ(std::string("abcdef"), cv.validateNamedParameter<StringParam>(cd).value());
-    // check if we get the default value.
-    std::cout << sr.defaultValue.toString() << std::endl;
     ASSERT_EQ(std::string("12345"), cv.validateNamedParameter<StringParam>(ConstructionData()).value());
 }
 

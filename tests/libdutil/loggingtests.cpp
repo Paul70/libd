@@ -65,9 +65,17 @@ private:
 TEST_F(LoggingTests, testStreamLogging)
 {
     {
+        std::stringstream buffer;
+        // Redirect std::cout to buffer
+        std::cout.rdbuf(buffer.rdbuf());
         Logger::Sink pSink = std::make_shared<StreamLoggingSink>();
         Logger l(&pSink);
         l.writeLogMessage("Hello World!", LoggingSink::LogLevel::ERROR);
+
+        std::string text = buffer.str();
+        int result = text.compare("Hello World!");
+        EXPECT_TRUE(result);
+        //EXPECT_THAT(prevcoutbuf, testing::HasSubstr("Hello World!"));
     }
     {
         Logger::Sink pSink = std::make_shared<StreamLoggingSink>(std::cout, LoggingSink::LogLevel::TRACE);

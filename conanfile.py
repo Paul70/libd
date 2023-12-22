@@ -29,12 +29,11 @@ class LibdRecipe(ConanFile):
         "shared": True,
         "fPIC": True
     }
-
     no_copy_source = True
-
     
     # Requirements for build (tool_requires) and host (requires) context 
     def requirements(self):
+        self.requires("gtest/1.14.0")
         pass
 
     def build_requirements(self):

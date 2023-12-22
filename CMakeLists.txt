@@ -43,15 +43,9 @@ add_subdirectory(libdglobals)
 add_subdirectory(libdutil)
 
 if(BUILD_LIBD_TESTS)
-    set(BUILD_LIBD_TESTS_AND_GOOGLETEST OFF)
     add_subdirectory(tests)
 endif()
-if(BUILD_LIBD_TESTS_AND_GOOGLETEST)
-    set(BUILD_LIBD_TESTS OFF)
-    libd_add_compileflag(-Wno-error "libd CMakeLists.txt")
-    add_subdirectory(thirdparty/googletest)
-    add_subdirectory(tests)
-endif()
+
 
 
 
