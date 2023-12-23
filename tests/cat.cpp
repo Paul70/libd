@@ -28,7 +28,7 @@ ConstructionValidator const &Cat::getConstructionValidator()
 
 Cat::Cat(ConstructionData const &cd) :
     name_(getConstructionValidator().validateNamedParameter<Name>(cd)),
-    age_(getConstructionValidator().validateNamedParameter<Age>(cd))
+                age_(getConstructionValidator().validateNamedParameter<Age>(cd))
 {}
 
 Cat::Type Cat::getType() const

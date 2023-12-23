@@ -20,7 +20,6 @@ public:
     static std::size_t getNumberOfRegisteredInterfaces() noexcept;
     static std::size_t getNumberOfConcreteClassesForInterface(std::string const &interface) noexcept;
 
-    //std::cout << e.what() << std::endl;
 protected:
     //! Read the given file into the result string.
     //static bool slurpFile(std::string const& fileName, std::string& result);

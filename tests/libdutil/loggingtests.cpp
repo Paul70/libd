@@ -1,8 +1,6 @@
 #include "libdutil/concretefactory.h"
 #include "libdutil/constructiondata.h"
 #include "libdutil/loggingsource.h"
-#include "libdutil/namedclass.h"
-#include "libdutil/projectware.h"
 #include "libdutil/streamloggingsink.h"
 #include "tests/testbase.h"
 
@@ -65,46 +63,52 @@ private:
 TEST_F(LoggingTests, testStreamLogging)
 {
     {
-        std::stringstream buffer;
-        // Redirect std::cout to buffer
-        std::cout.rdbuf(buffer.rdbuf());
-        Logger::Sink pSink = std::make_shared<StreamLoggingSink>();
+        std::ostringstream logStream;
+        Logger::Sink pSink = std::make_shared<StreamLoggingSink>(logStream);
         Logger l(&pSink);
         l.writeLogMessage("Hello World!", LoggingSink::LogLevel::ERROR);
-
-        std::string text = buffer.str();
-        int result = text.compare("Hello World!");
-        EXPECT_TRUE(result);
-        //EXPECT_THAT(prevcoutbuf, testing::HasSubstr("Hello World!"));
+        EXPECT_THAT(logStream.str(), testing::HasSubstr("Hello World!"));
     }
     {
-        Logger::Sink pSink = std::make_shared<StreamLoggingSink>(std::cout, LoggingSink::LogLevel::TRACE);
+        std::ostringstream logStream;
+        Logger::Sink pSink = std::make_shared<StreamLoggingSink>(logStream, LoggingSink::LogLevel::TRACE);
         Logger l(&pSink);
         l.writeTraceLogMessage("Trace log: Hello World!");
+        EXPECT_THAT(logStream.str(), testing::HasSubstr("Trace log: Hello World!"));
     }
     {
-        Logger::Sink pSink = std::make_shared<StreamLoggingSink>(std::cout, LoggingSink::LogLevel::DEBUG);
+        std::ostringstream logStream;
+        Logger::Sink pSink = std::make_shared<StreamLoggingSink>(logStream, LoggingSink::LogLevel::DEBUG);
         Logger l(&pSink);
         l.writeDebugLogMessage("Debug log: Hello World!");
+        EXPECT_THAT(logStream.str(), testing::HasSubstr("Debug log: Hello World!"));
     }
     {
-        Logger::Sink pSink = std::make_shared<StreamLoggingSink>(std::cout, LoggingSink::LogLevel::INFO);
+        std::ostringstream logStream;
+        Logger::Sink pSink = std::make_shared<StreamLoggingSink>(logStream, LoggingSink::LogLevel::INFO);
         Logger l(&pSink);
         l.writeInfoLogMessage("INFO log: Hello World!");
+        EXPECT_THAT(logStream.str(), testing::HasSubstr("INFO log: Hello World!"));
     }
     {
-        Logger::Sink pSink = std::make_shared<StreamLoggingSink>(std::cout, LoggingSink::LogLevel::WARN);
+        std::ostringstream logStream;
+        Logger::Sink pSink = std::make_shared<StreamLoggingSink>(logStream, LoggingSink::LogLevel::WARN);
         Logger l(&pSink);
-        l.writeTraceLogMessage("WARNING log: Hello World!");
+        l.writeWarningLogMessage("WARNING log: Hello World!");
+        EXPECT_THAT(logStream.str(), testing::HasSubstr("WARNING log: Hello World!"));
     }
     {
-        Logger::Sink pSink = std::make_shared<StreamLoggingSink>(std::cout, LoggingSink::LogLevel::ERROR);
+        std::ostringstream logStream;
+        Logger::Sink pSink = std::make_shared<StreamLoggingSink>(logStream, LoggingSink::LogLevel::ERROR);
         Logger l(&pSink);
         l.writeErrorLogMessage("ERROR log: Hello World!");
+        EXPECT_THAT(logStream.str(), testing::HasSubstr("ERROR log: Hello World!"));
     }
     {
-        Logger::Sink pSink = std::make_shared<StreamLoggingSink>(std::cout, LoggingSink::LogLevel::FATAL);
+        std::ostringstream logStream;
+        Logger::Sink pSink = std::make_shared<StreamLoggingSink>(logStream, LoggingSink::LogLevel::FATAL);
         Logger l(&pSink);
         l.writeFatalLogMessage("FATAL log: Hello World!");
+        EXPECT_THAT(logStream.str(), testing::HasSubstr("FATAL log: Hello World!"));
     }
 }

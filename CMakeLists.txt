@@ -19,12 +19,9 @@ endif()
 
 # Global options libd project
 option(BUILD_LIBD_TESTS "Build libd Googletest test suite and use Googletest system installation" ON)
-option(BUILD_LIBD_TESTS_AND_GOOGLETEST "Build libd Googletest test suite and Googletest framework itsself" OFF)
 
 if(BUILD_LIBD_TESTS)
     message(STATUS "libd CMakeLists.txt: option BUILD_LIBD_TESTS = ON")
-elseif(BUILD_LIBD_TESTS_AND_GOOGLETEST)
-    message(STATUS "libd CMakeLists.txt: option BUILD_LIBD_TESTS_AND_GOOGLETEST on")
 endif()
 
 # Check for parent cmake projects.

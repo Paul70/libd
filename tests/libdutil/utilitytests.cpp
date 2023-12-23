@@ -83,7 +83,8 @@ TEST_F(UtilityTests, testStringToArithmeticWorksAsExpedted)
     EXPECT_EQ(1234, stringToArithmetic<std::uint64_t>(str));
 
     str = "Hello World!";
-    D_EXPECT_THROW(stringToArithmetic<double>(str), "stod");
+    auto result = D_EXPECT_THROW(stringToArithmetic<double>(str), "stod");
+    EXPECT_THAT(result, testing::HasSubstr("stod"));
 }
 
 TEST_F(UtilityTests, testTrimStringWorksAsExpected)

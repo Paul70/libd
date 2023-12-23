@@ -73,8 +73,10 @@ TEST_F(NamedEnumTests, testConstructionWorksAsExpected)
     // expect throw due to invalid initialization
     {
         DUTIL::Variant var("HOLIDAY");
-        D_EXPECT_THROW(TestDummy::WEEKDAY e_wd(var), "is not registered as an enum value");
-        D_EXPECT_THROW(TestDummy::WEEKDAY e_wd(100), "Attempted initialization of named enum");
+        auto result = D_EXPECT_THROW(TestDummy::WEEKDAY e_wd(var), "is not registered as an enum value");
+        EXPECT_THAT(result, testing::HasSubstr("is not registered as an enum value"));
+        result =D_EXPECT_THROW(TestDummy::WEEKDAY e_wd(100), "Attempted initialization of named enum");
+        EXPECT_THAT(result, testing::HasSubstr("Attempted initialization of named enum"));
     }
 }
 
