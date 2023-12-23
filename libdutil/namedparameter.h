@@ -1,6 +1,5 @@
 #ifndef DUTIL_NAMEDPARAMETER_H
 #define DUTIL_NAMEDPARAMETER_H
-#include "basictypes.h"
 #include "exception.h"
 #include "variant.h"
 
