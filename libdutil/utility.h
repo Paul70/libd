@@ -60,7 +60,7 @@ std::string arithmeticToString(T value, std::int8_t precision = 10) noexcept
  * 2. Target type is unsidned integer:
  *    Uses std::stoull and casting for conversion to T type. If string
  *    number is negative, the minus sign gets removed ant number is treated
- *    as an absolute value.
+ *    as an absolute values
  *
  * 3. Target type is double:
  *    Uses std::stod for conversion.

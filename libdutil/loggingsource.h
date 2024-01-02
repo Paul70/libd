@@ -21,7 +21,7 @@ public:
     explicit LoggingSource(LoggingSinkPointer sink = nullptr);
 
     //! Write a log message into the logging sink.
-    void log(const std::string message, LoggingSink::LogLevel severity = LoggingSink::LogLevel::INFO) const;
+    void log(const std::string message, LoggingSink::LogSeverity severity = LoggingSink::LogSeverity::INFO) const;
 
     //! Shortcut logging fucntions for different log severity, i.e. using higher log levels.
     void trace(const std::string message) const;

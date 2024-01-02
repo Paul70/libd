@@ -3,11 +3,26 @@
 
 using namespace DUTIL;
 
-void LoggingSink::acceptLogMessage(std::string message, LogLevel level) const
+void LoggingSink::acceptLogMessage(std::string message, LogSeverity severity) const
 {
     LogItem li;
     li.message = message;
-    li.level = level;
-    li.time.now();
+    li.severity = severity;
+    li.time.setNow();
     acceptLogItemImpl(std::move(li));
+}
+
+void LoggingSink::setLogLevel(LogSeverity severity)
+{
+    setLogLevelImpl(severity);
+}
+
+void LoggingSink::readLogMessages(std::string& view, LogSeverity severity) const
+{
+    readLogMessagesImpl(view, severity);
+}
+
+void LoggingSink::enableCoutInAddition(bool flag)
+{
+    enabelCoutInAdditionImpl(flag);
 }

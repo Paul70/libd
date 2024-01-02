@@ -1,37 +1,61 @@
 #ifndef DUTIL_STREAMLOGGINGSINK_H
 #define DUTIL_STREAMLOGGINGSINK_H
-#include "loggingsink.h"
+#include "libdutil/loggingsink.h"
+#include "libdutil/namedparameter.h"
+#include "libdutil/concretefactory.h"
+#include "libdutil/projectware.h"
+#include "libdutil/namedclass.h"
+
+#include <filesystem>
 #include <atomic>
-#include <ostream>
+#include <variant>
+
 
 namespace DUTIL {
+class ConstructionValidator;
 struct LogItem;
+struct ConstructionData;
+
 
 /*! \brief Logging tool
  *
  * StreamLoggingSink writes log messages to the command line continously.
  */
-
-class StreamLoggingSink : public LoggingSink
+class StreamLoggingSink final: public LoggingSink, public ProjectWare, public D_NAMED_CLASS(::DUTIL::Now)
 {
 public:
-    //! Default constructor.
+    D_DECLARE_PROJECTWARE(StreamLoggingSink);
+
+    using Stream = std::variant<std::shared_ptr<std::fstream>,
+                                std::shared_ptr<std::ostringstream>,
+                                std::monostate>;
+
+
+    static ConstructionValidator const & getConstructionValidator();
+
+    D_NAMED_ENUM(Type, STDCOUT, FSTREAM, OSTRINGSTREAM)
+    D_NAMED_STRING(Path);
+    D_NAMED_BOOL(StdCout);
+
+    //! Default constructor, only std::cout for logging.
     StreamLoggingSink();
 
-    //! Constructor
-    explicit StreamLoggingSink(std::ostream &os, LogLevel severity = LogLevel::ERROR);
+    //! Constructor using ConstructionData
+    explicit StreamLoggingSink(ConstructionData const &cd);
 
-    //! Enable streaming of log message to std::cout additionally to another out stream.
-    void enableCoutInAddition(bool flag = true);
-
-    //! Update logging level.
-    void setLogLevel(LogLevel level);
+    virtual ~StreamLoggingSink() override;
 
 private:
     virtual void acceptLogItemImpl(LogItem &&item) const override;
+    virtual void enabelCoutInAdditionImpl(bool flag = true) override;
+    virtual void setLogLevelImpl(LogSeverity severity) override;
+    virtual void readLogMessagesImpl(std::string& view, LogSeverity severity = LogSeverity::ERROR) const override;
 
-    std::ostream &oStream_;
-    LogLevel level_;
+    const Type type_;
+    const std::filesystem::path path_;
+
+    Stream stream_;
+    LogSeverity severity_;
     std::atomic<bool> stdcout_;
 };
 

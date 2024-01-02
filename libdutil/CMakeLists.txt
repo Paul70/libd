@@ -7,7 +7,6 @@ set(dutil_HEADERS
     exception.h
     factory.h
     factoryinterface.h
-    fileloggingsink.h
     logitem.h
     loggingsource.h
     loggingsink.h
@@ -15,12 +14,13 @@ set(dutil_HEADERS
     namedenum.h
     namedparameter.h
     namedreference.h
+    namedreferenceparameter.h
     projectware.h
     settingrule.h
     settings.h
     staticpointercast.h
     streamloggingsink.h
-    time.h
+    now.h
     types.h
     utility.h
     variant.h
@@ -36,10 +36,11 @@ set(dutil_SOURCES
     exception.cpp
     factory.cpp
     factoryinterface.cpp
-    fileloggingsink.cpp
     loggingsink.cpp
     loggingsource.cpp
     namedenum.cpp
+    namedreferenceparameter.cpp
+    now.cpp
     projectware.cpp
     settingrule.cpp
     settings.cpp

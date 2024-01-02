@@ -1,8 +1,9 @@
-#include "libdutil/concretefactory.h"
-#include "libdutil/constructiondata.h"
 #include "libdutil/loggingsource.h"
+#include "libdutil/constructiondata.h"
 #include "libdutil/streamloggingsink.h"
 #include "tests/testbase.h"
+
+#include <fstream>
 
 using namespace DUTIL;
 
@@ -19,7 +20,7 @@ public:
         logger_(*sink)
     {}
 
-    void writeLogMessage(std::string &&msg, LoggingSink::LogLevel severity) const
+    void writeLogMessage(std::string &&msg, LoggingSink::LogSeverity severity) const
     {
         logger_.log(msg, severity);
     }
@@ -63,52 +64,98 @@ private:
 TEST_F(LoggingTests, testStreamLogging)
 {
     {
-        std::ostringstream logStream;
-        Logger::Sink pSink = std::make_shared<StreamLoggingSink>(logStream);
+        Logger::Sink pSink = std::make_shared<StreamLoggingSink>(ConstructionData()
+                                                                     .setEnum<StreamLoggingSink::Type>(StreamLoggingSink::Type::OSTRINGSTREAM)
+                                                                     .setEnum<LoggingSink::LogSeverity>(LoggingSink::LogSeverity::ERROR));
         Logger l(&pSink);
-        l.writeLogMessage("Hello World!", LoggingSink::LogLevel::ERROR);
-        EXPECT_THAT(logStream.str(), testing::HasSubstr("Hello World!"));
+        l.writeLogMessage("Hello World!", LoggingSink::LogSeverity::ERROR);
+        std::string view;
+        pSink->readLogMessages(view);
+        EXPECT_THAT(view, testing::HasSubstr("Hello World!"));
     }
     {
-        std::ostringstream logStream;
-        Logger::Sink pSink = std::make_shared<StreamLoggingSink>(logStream, LoggingSink::LogLevel::TRACE);
+        Logger::Sink pSink = std::make_shared<StreamLoggingSink>(ConstructionData()
+                                                                     .setEnum<StreamLoggingSink::Type>(StreamLoggingSink::Type::OSTRINGSTREAM)
+                                                                     .setEnum<LoggingSink::LogSeverity>(LoggingSink::LogSeverity::TRACE));
         Logger l(&pSink);
         l.writeTraceLogMessage("Trace log: Hello World!");
-        EXPECT_THAT(logStream.str(), testing::HasSubstr("Trace log: Hello World!"));
+        std::string view;
+        pSink->readLogMessages(view);
+        EXPECT_THAT(view, testing::HasSubstr("Trace log: Hello World!"));
     }
     {
-        std::ostringstream logStream;
-        Logger::Sink pSink = std::make_shared<StreamLoggingSink>(logStream, LoggingSink::LogLevel::DEBUG);
+        Logger::Sink pSink = std::make_shared<StreamLoggingSink>(ConstructionData()
+                                                                     .setEnum<StreamLoggingSink::Type>(StreamLoggingSink::Type::OSTRINGSTREAM)
+                                                                     .setEnum<LoggingSink::LogSeverity>(LoggingSink::LogSeverity::DEBUG));
         Logger l(&pSink);
         l.writeDebugLogMessage("Debug log: Hello World!");
-        EXPECT_THAT(logStream.str(), testing::HasSubstr("Debug log: Hello World!"));
+        std::string view;
+        pSink->readLogMessages(view);
+        EXPECT_THAT(view, testing::HasSubstr("Debug log: Hello World!"));
     }
     {
-        std::ostringstream logStream;
-        Logger::Sink pSink = std::make_shared<StreamLoggingSink>(logStream, LoggingSink::LogLevel::INFO);
+        Logger::Sink pSink = std::make_shared<StreamLoggingSink>(ConstructionData()
+                                                                     .setEnum<StreamLoggingSink::Type>(StreamLoggingSink::Type::OSTRINGSTREAM)
+                                                                     .setEnum<LoggingSink::LogSeverity>(LoggingSink::LogSeverity::INFO));
         Logger l(&pSink);
         l.writeInfoLogMessage("INFO log: Hello World!");
-        EXPECT_THAT(logStream.str(), testing::HasSubstr("INFO log: Hello World!"));
+        std::string view;
+        pSink->readLogMessages(view);
+        EXPECT_THAT(view, testing::HasSubstr("INFO log: Hello World!"));
     }
     {
-        std::ostringstream logStream;
-        Logger::Sink pSink = std::make_shared<StreamLoggingSink>(logStream, LoggingSink::LogLevel::WARN);
+        Logger::Sink pSink = std::make_shared<StreamLoggingSink>(ConstructionData()
+                                                                     .setEnum<StreamLoggingSink::Type>(StreamLoggingSink::Type::OSTRINGSTREAM)
+                                                                     .setEnum<LoggingSink::LogSeverity>(LoggingSink::LogSeverity::WARN));
         Logger l(&pSink);
         l.writeWarningLogMessage("WARNING log: Hello World!");
-        EXPECT_THAT(logStream.str(), testing::HasSubstr("WARNING log: Hello World!"));
+        std::string view;
+        pSink->readLogMessages(view);
+        EXPECT_THAT(view, testing::HasSubstr("WARNING log: Hello World!"));
     }
     {
-        std::ostringstream logStream;
-        Logger::Sink pSink = std::make_shared<StreamLoggingSink>(logStream, LoggingSink::LogLevel::ERROR);
+        Logger::Sink pSink = std::make_shared<StreamLoggingSink>(ConstructionData()
+                                                                     .setEnum<StreamLoggingSink::Type>(StreamLoggingSink::Type::OSTRINGSTREAM)
+                                                                     .setEnum<LoggingSink::LogSeverity>(LoggingSink::LogSeverity::ERROR));
         Logger l(&pSink);
         l.writeErrorLogMessage("ERROR log: Hello World!");
-        EXPECT_THAT(logStream.str(), testing::HasSubstr("ERROR log: Hello World!"));
+        std::string view;
+        pSink->readLogMessages(view);
+        EXPECT_THAT(view, testing::HasSubstr("ERROR log: Hello World!"));
     }
     {
-        std::ostringstream logStream;
-        Logger::Sink pSink = std::make_shared<StreamLoggingSink>(logStream, LoggingSink::LogLevel::FATAL);
+        Logger::Sink pSink = std::make_shared<StreamLoggingSink>(ConstructionData()
+                                                                     .setEnum<StreamLoggingSink::Type>(StreamLoggingSink::Type::OSTRINGSTREAM)
+                                                                     .setEnum<LoggingSink::LogSeverity>(LoggingSink::LogSeverity::FATAL));
         Logger l(&pSink);
-        l.writeFatalLogMessage("FATAL log: Hello World!");
-        EXPECT_THAT(logStream.str(), testing::HasSubstr("FATAL log: Hello World!"));
+         l.writeFatalLogMessage("FATAL log: Hello World!");
+        std::string view;
+        pSink->readLogMessages(view);
+        EXPECT_THAT(view, testing::HasSubstr("FATAL log: Hello World!"));
     }
 }
+
+
+TEST_F(LoggingTests, testFileLogging)
+{
+    std::string file = "/home/paul/Projects/Software/libd/tests/test_data/logging/log.txt";
+    {
+        Logger::Sink pSink = std::make_shared<StreamLoggingSink>(ConstructionData()
+                                                                     .setEnum<StreamLoggingSink::Type>(StreamLoggingSink::Type::FSTREAM)
+                                                                     .setEnum<LoggingSink::LogSeverity>(LoggingSink::LogSeverity::ERROR)
+                                                                     .setParameter<StreamLoggingSink::Path>(file));
+        Logger l(&pSink);
+        l.writeLogMessage("Hello World!", LoggingSink::LogSeverity::ERROR);
+    }
+
+    // read recently written log file and check content
+    std::fstream test;
+    test.open(file, std::ios_base::in);
+
+    std::stringstream buffer;
+    buffer << test.rdbuf();
+    EXPECT_THAT(buffer.str(), testing::HasSubstr("Hello World!"));
+    EXPECT_THAT(buffer.str(), testing::HasSubstr("ERROR"));
+    EXPECT_THAT(buffer.str(), testing::HasSubstr("Start logging"));
+}
+
