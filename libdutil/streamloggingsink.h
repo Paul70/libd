@@ -21,7 +21,7 @@ struct ConstructionData;
  *
  * StreamLoggingSink writes log messages to the command line continously.
  */
-class StreamLoggingSink final: public LoggingSink, public ProjectWare, public D_NAMED_CLASS(::DUTIL::Now)
+class StreamLoggingSink final: public LoggingSink, public ProjectWare, public D_NAMED_CLASS(::DUTIL::StreamLoggingSink)
 {
 public:
     D_DECLARE_PROJECTWARE(StreamLoggingSink);
