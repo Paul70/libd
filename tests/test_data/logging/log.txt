@@ -13,3 +13,6 @@
 2024-01-02 15:01:15	ERROR Log:	Start logging.
 2024-01-02 15:01:15	ERROR Log:	Hello World!
 2024-01-02 15:01:15	ERROR Log:	Stop logging, closing file stream.
+2024-01-02 15:02:07	ERROR Log:	Start logging.
+2024-01-02 15:02:07	ERROR Log:	Hello World!
+2024-01-02 15:02:07	ERROR Log:	Stop logging, closing file stream.
