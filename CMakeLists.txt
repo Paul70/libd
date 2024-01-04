@@ -35,7 +35,7 @@ if(NOT HAS_PARENT)
     include(ConfigureBuildPaths)
 endif()
 
-add_subdirectory(libversion)
+add_subdirectory(libdversion)
 add_subdirectory(libdglobals)
 add_subdirectory(libdutil)
 
