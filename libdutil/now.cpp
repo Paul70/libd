@@ -18,9 +18,8 @@ ConstructionValidator const& Now::getConstructionValidator()
          return sr;
        }(),
        []() {
-         SR sr = SR::forNamedEnum<Now::Zone>(
-             SR::Usage::MANDATORY_WITH_DEFAULT,
-             "Set time zone, default is local system time zone.");
+         SR sr = SR::forNamedEnum<Now::Zone>(SR::Usage::MANDATORY_WITH_DEFAULT,
+                                             "Set time zone, default is local system time zone.");
          sr.defaultValue = toString(Now::Zone::LOCAL);
          return sr;
        }()},
@@ -29,13 +28,15 @@ ConstructionValidator const& Now::getConstructionValidator()
 }
 
 Now::Now() :
-    saved_(std::chrono::system_clock::now()),
+    timepoint_(std::chrono::system_clock::now()),
+    tick_(0),
     clock_(Now::Clock::SYSTEM),
     zone_(Now::Zone::LOCAL)
 {}
 
 Now::Now(ConstructionData const& cd) :
-    saved_(),
+    timepoint_(),
+    tick_(0),
     clock_(getConstructionValidator().validateNamedEnum<Now::Clock>(cd)),
     zone_(getConstructionValidator().validateNamedEnum<Now::Zone>(cd))
 {
@@ -51,13 +52,13 @@ void Now::setTimePoint()
 {
   if (clock_ == Clock::SYSTEM) {
     auto tp = std::chrono::system_clock::now();
-    saved_ = tp;
+    timepoint_ = tp;
 
   } else if (clock_ == Clock::STEADY) {
     auto tp = std::chrono::steady_clock::now();
-    saved_ = tp;
+    timepoint_ = tp;
   } else {
     auto tp = std::chrono::high_resolution_clock::now();
-    saved_ = tp;
+    timepoint_ = tp;
   }
 }

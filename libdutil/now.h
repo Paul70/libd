@@ -1,9 +1,9 @@
 #ifndef DUTIL_NOW_H
 #define DUTIL_NOW_H
-#include "libdutil/concretefactory.h"
-#include "libdutil/namedclass.h"
-#include "libdutil/namedenum.h"
-#include "libdutil/projectware.h"
+#include "concretefactory.h"
+#include "namedclass.h"
+#include "namedenum.h"
+#include "projectware.h"
 
 #include <chrono>
 #include <iomanip>
@@ -27,6 +27,8 @@ struct ConstructionData;
 class Now : public ProjectWare, public D_NAMED_CLASS(::DUTIL::Now)
 {
   public:
+  using Tick = std::uint64_t;
+
   D_DECLARE_PROJECTWARE(Now);
 
   //! Enum listing supported clock types.
@@ -74,15 +76,14 @@ class Now : public ProjectWare, public D_NAMED_CLASS(::DUTIL::Now)
   template <typename Clock>
   std::chrono::time_point<Clock> getNow() const
   {
-    return std::get<std::chrono::time_point<Clock>>(saved_);
+    return std::get<std::chrono::time_point<Clock>>(timepoint_);
   }
 
   //! Put saved time point into a std stream object.
-  template <typename T = std::ostream,
-            typename Clock = std::chrono::system_clock>
+  template <typename T = std::ostream, typename Clock = std::chrono::system_clock>
   void putSavedToStream(T& stream = std::cout) const
   {
-    auto tp = std::get<std::chrono::time_point<Clock>>(saved_);
+    auto tp = std::get<std::chrono::time_point<Clock>>(timepoint_);
     const std::time_t t_c = Clock::to_time_t(tp);
     if (zone_ == Zone::LOCAL)
       stream << std::put_time(std::localtime(&t_c), "%F %T");
@@ -91,13 +92,13 @@ class Now : public ProjectWare, public D_NAMED_CLASS(::DUTIL::Now)
   }
 
   private:
-  using TimePoint
-      = std::variant<std::chrono::time_point<std::chrono::system_clock>,
-                     std::chrono::time_point<std::chrono::steady_clock>>;
+  using TimePoint = std::variant<std::chrono::time_point<std::chrono::system_clock>,
+                                 std::chrono::time_point<std::chrono::steady_clock>>;
 
   void setTimePoint();
 
-  TimePoint saved_;
+  TimePoint timepoint_;
+  Tick tick_;
   const Clock clock_;
   const Zone zone_;
 };
