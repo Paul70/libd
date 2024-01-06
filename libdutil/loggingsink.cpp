@@ -8,7 +8,7 @@ void LoggingSink::acceptLogMessage(std::string message, LogSeverity severity) co
     LogItem li;
     li.message = message;
     li.severity = severity;
-    li.time.setNow();
+    li.time.advance();
     acceptLogItemImpl(std::move(li));
 }
 

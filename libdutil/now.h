@@ -18,10 +18,10 @@ struct ConstructionData;
 /*! \brief Set and save the current time point depending on the
  *  specified clock.
  *
- *  Supported clock types are all C11 clocks: std::chrono::system_clock and std::chrono::steady_clock.
- *  Please note, that std::chrono::high_resolution_clock is an alias of std::chrono::system_clock.
- *  Using std::chrono::high_resolution_clock is just fine, however, programmatical it is a
- *  std::chrono::system_clock.
+ *  Supported clock types are all C11 clocks: std::chrono::system_clock and
+ *  std::chrono::steady_clock. Please note, that std::chrono::high_resolution_clock
+ *  is an alias of std::chrono::system_clock. Using std::chrono::high_resolution_clock
+ *  is just fine, however, programmatical it is a std::chrono::system_clock.
  */
 
 class Now : public ProjectWare, public D_NAMED_CLASS(::DUTIL::Now)
@@ -37,6 +37,9 @@ class Now : public ProjectWare, public D_NAMED_CLASS(::DUTIL::Now)
   //! Enum specifying the time zone for the time point.
   D_NAMED_ENUM(Zone, UTC, LOCAL)
 
+  //! An integer tick counter.
+  D_NAMED_PARAMETER(TickParam, std::uint64_t)
+
   //! Return current time point.
   template <typename Clock = std::chrono::system_clock>
   static std::chrono::time_point<Clock> now()
@@ -44,7 +47,11 @@ class Now : public ProjectWare, public D_NAMED_CLASS(::DUTIL::Now)
     Clock::now();
   }
 
-  //! Put current time point into a std stream object.
+  /*! \brief Put a time point into a std stream object.
+   *
+   * Function does not change the tick and time point owned
+   * by instances of this class.
+   */
   template <typename S = std::ostream, typename C = std::chrono::system_clock>
   static void putToStream(S& stream = std::cout, Zone z = Zone::LOCAL)
   {
@@ -70,16 +77,24 @@ class Now : public ProjectWare, public D_NAMED_CLASS(::DUTIL::Now)
   //! Constructor with custom settings using ConstructionData.
   Now(ConstructionData const& cd);
 
-  //! Update saved time point to now.
-  void setNow();
+  /*! \brief Advance by one time tick.
+   *
+   * Update saved time point to now and increase the time tick
+   * parameter.
+   */
+  Tick advance();
 
   template <typename Clock>
-  std::chrono::time_point<Clock> getNow() const
+  std::pair<Tick, std::chrono::time_point<Clock>> getNow() const
   {
-    return std::get<std::chrono::time_point<Clock>>(timepoint_);
+    return std::make_pair(tick_, std::get<std::chrono::time_point<Clock>>(timepoint_));
   }
 
-  //! Put saved time point into a std stream object.
+  /*! \brief Put saved time point into a std stream object.
+   *
+   * Uses the saved time point, that is this method my treats a time
+   * point from the past.
+   */
   template <typename T = std::ostream, typename Clock = std::chrono::system_clock>
   void putSavedToStream(T& stream = std::cout) const
   {

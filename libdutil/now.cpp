@@ -22,6 +22,13 @@ ConstructionValidator const& Now::getConstructionValidator()
                                              "Set time zone, default is local system time zone.");
          sr.defaultValue = toString(Now::Zone::LOCAL);
          return sr;
+       }(),
+       []() {
+         SR sr = SR::forNamedParameter<Now::TickParam>(SR::Usage::MANDATORY_WITH_DEFAULT,
+                                                       "Set the starting tick value.");
+         sr.maximalValue = 0;
+         sr.defaultValue = 0;
+         return sr;
        }()},
       {});
   return cv;
@@ -36,16 +43,17 @@ Now::Now() :
 
 Now::Now(ConstructionData const& cd) :
     timepoint_(),
-    tick_(0),
+    tick_(getConstructionValidator().validateNamedParameter<Now::TickParam>(cd)),
     clock_(getConstructionValidator().validateNamedEnum<Now::Clock>(cd)),
     zone_(getConstructionValidator().validateNamedEnum<Now::Zone>(cd))
 {
   setTimePoint();
 }
 
-void Now::setNow()
+Now::Tick Now::advance()
 {
   setTimePoint();
+  return ++tick_;
 }
 
 void Now::setTimePoint()
