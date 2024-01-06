@@ -33,8 +33,8 @@ set(libd_tests_SOURCES
     libdutil/settingstests.cpp
     libdutil/utilitytests.cpp
     libdutil/varianttests.cpp
-    libdutil/versiontests.cpp
     libdutil/waretests.cpp
+    libdversion/versiontests.cpp
 )
 
 find_package(GTest CONFIG REQUIRED)
