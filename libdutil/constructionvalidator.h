@@ -155,7 +155,9 @@ class ConstructionValidator
   template <typename NR>
   auto buildSubobjectList(ConstructionData const& cd) const
   {
+    // hier kommt aus irgnedeinem grung ein item zu viel raus
     auto subobjectCDPtrVec = validateAndReturnSubobjectCDs(cd, NR::getReferenceName());
+
     if (proxyCheck(*subobjectCDPtrVec.front())) {
       return std::vector<std::unique_ptr<typename NR::RT>>();
     }

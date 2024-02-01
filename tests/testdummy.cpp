@@ -8,10 +8,10 @@ using namespace DUTIL;
 
 D_DEFINE_TESTDUMMYINTERFACE(TestDummy);
 
-DUTIL::ConstructionValidator const &TestDummy::getConstructionValidator()
+DUTIL::ConstructionValidator const& TestDummy::getConstructionValidator()
 {
-    using SR = SettingRule;
-    // clang-format off
+  using SR = SettingRule;
+  // clang-format off
     static ConstructionValidator cv = ConstructionValidator(
         { [] () {
             SR sr = SR::forNamedEnum<COLOR>(SR::Usage::MANDATORY_WITH_DEFAULT, "Set the color member for this class.");
@@ -20,15 +20,15 @@ DUTIL::ConstructionValidator const &TestDummy::getConstructionValidator()
         },
         {}, // no WarelistRules needed
         ProjectWare::getConstructionValidator());
-    // clang-format on
-    return cv;
+  // clang-format on
+  return cv;
 }
 
-TestDummy::TestDummy(DUTIL::ConstructionData const &cd) :
+TestDummy::TestDummy(DUTIL::ConstructionData const& cd) :
     color_(getConstructionValidator().validateNamedEnum<COLOR>(cd))
 {}
 
-TestDummy::COLOR const &TestDummy::getNamedEnum() const
+TestDummy::COLOR const& TestDummy::getNamedEnum() const
 {
-    return color_;
+  return color_;
 }

@@ -28,7 +28,7 @@ class Factory
      * The ConstructionValidator object is especially configuerd to check the concrete ware.
      * Therefore, the method is non static.
      */
-  ConstructionValidator const& getConstructionValidator() const;
+  ConstructionValidator const& getConcreteConstructionValidator() const;
 
   std::unique_ptr<Ware> newInstance(ConstructionData const& cd) const;
 
@@ -86,7 +86,7 @@ class Factory
                                       const std::string concreteClassName);
 
   private:
-  virtual ConstructionValidator const& getConstructionValidatorImpl() const = 0;
+  virtual ConstructionValidator const& getConcreteConstructionValidatorImpl() const = 0;
   virtual std::string checkCDImpl(ConstructionData const& cd) const = 0;
   virtual std::unique_ptr<Ware> newInstanceImpl(ConstructionData const& cd) const = 0;
   std::shared_ptr<void> factoryMap_;

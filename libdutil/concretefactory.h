@@ -37,20 +37,20 @@ class ConcreteFactory : public Factory, public FactoryInterface<Interfaces>...
   void operator=(ConcreteFactory const&) = delete;
 
   private:
-  virtual ConstructionValidator const& getConstructionValidatorImpl() const override
-  {
-    return ConcreteWareType::getConstructionValidator();
-  }
-
   virtual std::string checkCDImpl(ConstructionData const& cd) const override
   {
-    auto const& cv = getConstructionValidator();
+    auto const& cv = getConcreteConstructionValidator();
     auto result = cv.check(cd);
     if (!result.empty()) {
       return "Errors occured during ConstructionData check for '"
              + ConcreteWareType::getShortClassName() + "': " + result;
     }
     return "";
+  }
+
+  virtual ConstructionValidator const& getConcreteConstructionValidatorImpl() const override
+  {
+    return ConcreteWareType::getConstructionValidator();
   }
 
   virtual std::unique_ptr<Ware> newInstanceImpl(ConstructionData const& cd) const override
