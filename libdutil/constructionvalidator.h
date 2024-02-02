@@ -9,6 +9,8 @@
 #include "settingrule.h"
 #include "warelistrule.h"
 
+#include <iostream>
+
 namespace DUTIL {
 class Ware;
 template <class BaseType>
@@ -156,10 +158,12 @@ class ConstructionValidator
   auto buildSubobjectList(ConstructionData const& cd) const
   {
     auto subobjectCDPtrVec = validateAndReturnSubobjectCDs(cd, NR::getReferenceName());
+
     if (proxyCheck(*subobjectCDPtrVec.front())) {
       return std::vector<std::unique_ptr<typename NR::RT>>();
     }
     std::vector<std::unique_ptr<typename NR::RT>> warePtrVec(subobjectCDPtrVec.size());
+
     std::transform(subobjectCDPtrVec.begin(), subobjectCDPtrVec.end(), warePtrVec.begin(),
                    [](ConstructionData const* inputCD) {
                      return makeObjectHelper<typename NR::RT>(*inputCD);
