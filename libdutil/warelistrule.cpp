@@ -3,14 +3,14 @@
 
 using namespace DUTIL;
 
-ConstructionValidator const &WarelistRule::getTrivialConstructionValidator()
+ConstructionValidator const& WarelistRule::getTrivialConstructionValidator()
 {
-    static ConstructionValidator cv;
-    return cv;
+  static ConstructionValidator cv;
+  return cv;
 }
 
 WarelistRule::WarelistRule() :
-    usage(Usage::MANDATORY),
+    usage(Usage::OPTIONAL),
     asReference(false),
     length(lengthNotDefined),
     key(""),

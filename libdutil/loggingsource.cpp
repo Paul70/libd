@@ -8,47 +8,49 @@ LoggingSource::LoggingSource(LoggingSinkPointer sink) :
 
 void LoggingSource::log(const std::string message, LoggingSink::LogSeverity severity) const
 {
+  if (sink_) {
     sink_->acceptLogMessage(message, severity);
+  }
 }
 
 void LoggingSource::trace(const std::string message) const
 {
-    sink_->acceptLogMessage(message, LoggingSink::LogSeverity::TRACE);
+  log(message, LoggingSink::LogSeverity::TRACE);
 }
 
 void LoggingSource::debug(const std::string message) const
 {
-    sink_->acceptLogMessage(message, LoggingSink::LogSeverity::DEBUG);
+  log(message, LoggingSink::LogSeverity::DEBUG);
 }
 
 void LoggingSource::info(const std::string message) const
 {
-    sink_->acceptLogMessage(message, LoggingSink::LogSeverity::INFO);
+  log(message, LoggingSink::LogSeverity::INFO);
 }
 
 void LoggingSource::warn(const std::string message) const
 {
-    sink_->acceptLogMessage(message, LoggingSink::LogSeverity::WARN);
+  log(message, LoggingSink::LogSeverity::WARN);
 }
 
 void LoggingSource::error(const std::string message) const
 {
-    sink_->acceptLogMessage(message, LoggingSink::LogSeverity::ERROR);
+  log(message, LoggingSink::LogSeverity::ERROR);
 }
 
 void LoggingSource::fatal(const std::string message) const
 {
-    sink_->acceptLogMessage(message, LoggingSink::LogSeverity::FATAL);
+  log(message, LoggingSink::LogSeverity::FATAL);
 }
 
 LoggingSource::LoggingSinkPointer LoggingSource::getLoggingSink() const
 {
-    return sink_;
+  return sink_;
 }
 
 void LoggingSource::setLoggingSink(LoggingSinkPointer sink)
 {
-    sink_ = sink;
+  sink_ = sink;
 }
 
-} // namespace DUTIL
+}  // namespace DUTIL

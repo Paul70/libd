@@ -93,7 +93,11 @@ ConstructionValidator const& CompoundWareC::getConstructionValidator()
          }(),
          WarelistRule::forSubobjectList<WareAFixedListInstance>("my own fixed list of two ware A", 2),
          WarelistRule::forSharedWareList<WareAFixedListRef>("shared fixed list of two ware A", 2),
-         WarelistRule::forSubobject<WareBInstance>("my own ware B object")},
+         [](){
+            WarelistRule wr = WarelistRule::forSubobject<WareBInstance>("my own ware B object");
+            wr.usage = WarelistRule::Usage::MANDATORY;
+            return wr;
+         }()},
         ProjectWare::getConstructionValidator());
   // clang-format on
   return cv;

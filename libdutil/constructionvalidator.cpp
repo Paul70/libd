@@ -193,7 +193,7 @@ ConstructionValidator::ConstructionValidator(std::vector<SettingRule> settingRul
 std::string ConstructionValidator::check(ConstructionData const& cd) const
 {
   // Crucial step:
-  // either this callback tiggers the default check routine using 'recursiveCheck()' or omitts
+  // either this callback tiggers the default check routine usding 'recursiveCheck()' or omitts
   // the validation porcess in case a CD object is only a proxy and not used to construct a real object.
   if (cd.isProxy())
     return "";
@@ -600,7 +600,7 @@ std::string ConstructionValidator::checkSubObjectListAndReturnErrors(Constructio
 
   auto const& wlr = warelistRules_.at(key);
 
-  // Check if there are more then one subobjects for building objects of the SAME type
+  // Check if there are more then one subobjects building objects of the same type
   if (wlr.length == WarelistRule::lengthSingleton) {
     return "Warelistrule for key '" + key
                + "' refers to a single subobject and not a list. Call 'checkSubobjectAndReturnErrors' instead.";
@@ -680,18 +680,20 @@ std::vector<ConstructionData const*> ConstructionValidator::validateAndReturnSub
   }
 
   // no error detected, return a vector with pointers to the subobject cds.
-  auto count = 0;
-  auto iter = cd.subObjectData.find(key + ConstructionData::seperator + Utility::toString(count));
+  auto iter = cd.subObjectData.find(key + ConstructionData::seperator + Utility::toString(0));
   if (iter == cd.subObjectData.cend()) {
     return std::vector<ConstructionData const*>{&proxyCD};
-  } else {
-    std::vector<ConstructionData const*> result(cd.subObjectData.size());
-    do {
-      result[count] = &iter->second;
-      iter = cd.subObjectData.find(key + ConstructionData::seperator + Utility::toString(++count));
-    } while (iter != cd.subObjectData.cend());
-    return result;
   }
+
+  std::vector<ConstructionData const*> result;
+  for (auto count = 0;; ++count) {
+    iter = cd.subObjectData.find(key + ConstructionData::seperator + Utility::toString(count));
+    if (iter == cd.subObjectData.cend())
+      break;
+    result.push_back(&iter->second);
+  }
+  //} while (iter != cd.subObjectData.cend());
+  return result;
 }
 
 std::string ConstructionValidator::validateSharedWareAndReturnId(
