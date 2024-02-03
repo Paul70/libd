@@ -254,16 +254,59 @@ TEST_F(ConstructionValidatorTests, buildSubobjectListWithValidSubobjectData)
 
 TEST_F(ConstructionValidatorTests, validateHeterogenousSubObjectsAndUndefinedListLength)
 {
-  // build a CompundWareE object
+  {
+    // build a CompundWareE object with one CompoundWareD in the list of subobjects.
+    auto wareE = CompoundWareE(
+        ConstructionData()  // CD ware E
+            .setParameter<CompoundWareE::Description>(
+                "CompundWareE: testing heterogenous subobjects "
+                "and subobject list with undefined lenght.")
+            .setParameter<CompoundWareBIntermediate::RealBIntermediate>(44.44)
+            .addSubobject<CompoundWareE::WareDInstanceList>(
+                ConstructionData()  // CD for ware D (only one in the list)
+                    .setConcreteClassParameter<CompoundWareD>()
+                    .setParameter<CompoundWareD::NameD>("D"))
+            .addSubobject<CompoundWareBIntermediate::WareBInstance>(
+                ConstructionData()  // CD B in Bintermediate
+                    .setConcreteClassParameter<CompoundWareB>()
+                    .setParameter<CompoundWareB::RealB>(7.77)
+                    .addSharedWare(CompoundWareB::WareAPtrRef(
+                        "wareAPtrRef",
+                        std::make_shared<CompoundWareA>(
+                            ConstructionData().setParameter<CompoundWareA::LabelA>(4))))));
+
+    // CompoundWareE consists of:
+    // - derived from CompoundWareBIntermediate and CompoundWareBIntermediate
+    //   has a memeber variable CompundWareB
+    // - CompoundWareB has a shared reference to a CompundWareA object.
+    // - un undefined number of CompundWareD objects stored in vector
+    ASSERT_EQ(wareE.dList.size(), 1);
+    ASSERT_EQ(
+        wareE.descr.value(),
+        "CompundWareE: testing heterogenous subobjects and subobject list with undefined lenght.");
+    ASSERT_EQ(wareE.dList.front()->name.value(), "D");
+    ASSERT_EQ(wareE.wareB.rB, 7.77);
+    ASSERT_EQ(wareE.wareB.wareARef->lA.value(), 4);
+  }
+
+  // build a CompundWareE object with 3 CompoundWareD in the list of subobjects.
   auto wareE = CompoundWareE(
       ConstructionData()  // CD ware E
           .setParameter<CompoundWareE::Description>("CompundWareE: testing heterogenous subobjects "
                                                     "and subobject list with undefined lenght.")
           .setParameter<CompoundWareBIntermediate::RealBIntermediate>(44.44)
           .addSubobject<CompoundWareE::WareDInstanceList>(
-              ConstructionData()  // CD ware D
+              ConstructionData()  // CD for first ware D
                   .setConcreteClassParameter<CompoundWareD>()
-                  .setParameter<CompoundWareD::NameD>("D"))
+                  .setParameter<CompoundWareD::NameD>("D1"))
+          .addSubobject<CompoundWareE::WareDInstanceList>(
+              ConstructionData()  // CD for second ware D
+                  .setConcreteClassParameter<CompoundWareD>()
+                  .setParameter<CompoundWareD::NameD>("D2"))
+          .addSubobject<CompoundWareE::WareDInstanceList>(
+              ConstructionData()  // CD for third ware D
+                  .setConcreteClassParameter<CompoundWareD>()
+                  .setParameter<CompoundWareD::NameD>("D3"))
           .addSubobject<CompoundWareBIntermediate::WareBInstance>(
               ConstructionData()  // CD B in Bintermediate
                   .setConcreteClassParameter<CompoundWareB>()
@@ -272,6 +315,21 @@ TEST_F(ConstructionValidatorTests, validateHeterogenousSubObjectsAndUndefinedLis
                       "wareAPtrRef",
                       std::make_shared<CompoundWareA>(
                           ConstructionData().setParameter<CompoundWareA::LabelA>(4))))));
+
+  // CompoundWareE consists of:
+  // - derived from CompoundWareBIntermediate and CompoundWareBIntermediate
+  //   has a memeber variable CompundWareB
+  // - CompoundWareB has a shared reference to a CompundWareA object.
+  // - un undefined number of CompundWareD objects stored in vector
+  ASSERT_EQ(wareE.dList.size(), 3);
+  ASSERT_EQ(
+      wareE.descr.value(),
+      "CompundWareE: testing heterogenous subobjects and subobject list with undefined lenght.");
+  ASSERT_EQ(wareE.dList.front()->name.value(), "D1");
+  ASSERT_EQ(wareE.dList.at(1)->name.value(), "D2");
+  ASSERT_EQ(wareE.dList.back()->name.value(), "D3");
+  ASSERT_EQ(wareE.wareB.rB, 7.77);
+  ASSERT_EQ(wareE.wareB.wareARef->lA.value(), 4);
 }
 
 TEST_F(ConstructionValidatorTests, validateSubObjectForBaseClass)  // funktioniert
