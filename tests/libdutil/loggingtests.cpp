@@ -21,8 +21,7 @@ class Logger
       logger_(*sink)
   {}
 
-  void writeLogMessage(std::string&& msg,
-                       LoggingSink::LogSeverity severity) const
+  void writeLogMessage(std::string&& msg, LoggingSink::LogSeverity severity) const
   {
     logger_.log(msg, severity);
   }
@@ -50,10 +49,8 @@ TEST_F(LoggingTests, testStreamLogging)
   {
     Logger::Sink pSink = std::make_shared<StreamLoggingSink>(
         ConstructionData()
-            .setEnum<StreamLoggingSink::Type>(
-                StreamLoggingSink::Type::OSTRINGSTREAM)
-            .setEnum<LoggingSink::LogSeverity>(
-                LoggingSink::LogSeverity::ERROR));
+            .setEnum<StreamLoggingSink::Type>(StreamLoggingSink::Type::OSTREAM)
+            .setEnum<LoggingSink::LogSeverity>(LoggingSink::LogSeverity::ERROR));
     Logger l(&pSink);
     l.writeLogMessage("Hello World!", LoggingSink::LogSeverity::ERROR);
     std::string view;
@@ -63,10 +60,8 @@ TEST_F(LoggingTests, testStreamLogging)
   {
     Logger::Sink pSink = std::make_shared<StreamLoggingSink>(
         ConstructionData()
-            .setEnum<StreamLoggingSink::Type>(
-                StreamLoggingSink::Type::OSTRINGSTREAM)
-            .setEnum<LoggingSink::LogSeverity>(
-                LoggingSink::LogSeverity::TRACE));
+            .setEnum<StreamLoggingSink::Type>(StreamLoggingSink::Type::OSTREAM)
+            .setEnum<LoggingSink::LogSeverity>(LoggingSink::LogSeverity::TRACE));
     Logger l(&pSink);
     l.writeTraceLogMessage("Trace log: Hello World!");
     std::string view;
@@ -76,10 +71,8 @@ TEST_F(LoggingTests, testStreamLogging)
   {
     Logger::Sink pSink = std::make_shared<StreamLoggingSink>(
         ConstructionData()
-            .setEnum<StreamLoggingSink::Type>(
-                StreamLoggingSink::Type::OSTRINGSTREAM)
-            .setEnum<LoggingSink::LogSeverity>(
-                LoggingSink::LogSeverity::DEBUG));
+            .setEnum<StreamLoggingSink::Type>(StreamLoggingSink::Type::OSTREAM)
+            .setEnum<LoggingSink::LogSeverity>(LoggingSink::LogSeverity::DEBUG));
     Logger l(&pSink);
     l.writeDebugLogMessage("Debug log: Hello World!");
     std::string view;
@@ -89,8 +82,7 @@ TEST_F(LoggingTests, testStreamLogging)
   {
     Logger::Sink pSink = std::make_shared<StreamLoggingSink>(
         ConstructionData()
-            .setEnum<StreamLoggingSink::Type>(
-                StreamLoggingSink::Type::OSTRINGSTREAM)
+            .setEnum<StreamLoggingSink::Type>(StreamLoggingSink::Type::OSTREAM)
             .setEnum<LoggingSink::LogSeverity>(LoggingSink::LogSeverity::INFO));
     Logger l(&pSink);
     l.writeInfoLogMessage("INFO log: Hello World!");
@@ -101,8 +93,7 @@ TEST_F(LoggingTests, testStreamLogging)
   {
     Logger::Sink pSink = std::make_shared<StreamLoggingSink>(
         ConstructionData()
-            .setEnum<StreamLoggingSink::Type>(
-                StreamLoggingSink::Type::OSTRINGSTREAM)
+            .setEnum<StreamLoggingSink::Type>(StreamLoggingSink::Type::OSTREAM)
             .setEnum<LoggingSink::LogSeverity>(LoggingSink::LogSeverity::WARN));
     Logger l(&pSink);
     l.writeWarningLogMessage("WARNING log: Hello World!");
@@ -113,10 +104,8 @@ TEST_F(LoggingTests, testStreamLogging)
   {
     Logger::Sink pSink = std::make_shared<StreamLoggingSink>(
         ConstructionData()
-            .setEnum<StreamLoggingSink::Type>(
-                StreamLoggingSink::Type::OSTRINGSTREAM)
-            .setEnum<LoggingSink::LogSeverity>(
-                LoggingSink::LogSeverity::ERROR));
+            .setEnum<StreamLoggingSink::Type>(StreamLoggingSink::Type::OSTREAM)
+            .setEnum<LoggingSink::LogSeverity>(LoggingSink::LogSeverity::ERROR));
     Logger l(&pSink);
     l.writeErrorLogMessage("ERROR log: Hello World!");
     std::string view;
@@ -126,10 +115,8 @@ TEST_F(LoggingTests, testStreamLogging)
   {
     Logger::Sink pSink = std::make_shared<StreamLoggingSink>(
         ConstructionData()
-            .setEnum<StreamLoggingSink::Type>(
-                StreamLoggingSink::Type::OSTRINGSTREAM)
-            .setEnum<LoggingSink::LogSeverity>(
-                LoggingSink::LogSeverity::FATAL));
+            .setEnum<StreamLoggingSink::Type>(StreamLoggingSink::Type::OSTREAM)
+            .setEnum<LoggingSink::LogSeverity>(LoggingSink::LogSeverity::FATAL));
     Logger l(&pSink);
     l.writeFatalLogMessage("FATAL log: Hello World!");
     std::string view;
@@ -140,8 +127,7 @@ TEST_F(LoggingTests, testStreamLogging)
 
 TEST_F(LoggingTests, testFileLogging)
 {
-  std::string file
-      = "/home/paul/Projects/Software/libd/tests/test_data/logging/log.txt";
+  std::string file = "/home/paul/Projects/Software/libd/tests/test_data/logging/log.txt";
   {
     Logger::Sink pSink = std::make_shared<StreamLoggingSink>(
         ConstructionData()
