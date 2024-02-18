@@ -1,6 +1,7 @@
 #ifndef DUTIL_CONSTRUCTIONDATA_H
 #define DUTIL_CONSTRUCTIONDATA_H
 #include <memory>
+#include "dataset.h"
 #include "settings.h"
 
 namespace DUTIL {
@@ -29,6 +30,9 @@ struct ConstructionData
   Settings s;
   Settings wareSettings;
 
+  //! Dataset member for storing bulk numeric data.
+  Dataset ds;
+
   //! A std::map for recursevily storing other ConstructionData objects.
   std::map<std::string, ConstructionData> subObjectData;
 
@@ -39,10 +43,19 @@ struct ConstructionData
   ConstructionData& set(Settings sNew) &;
   ConstructionData&& set(Settings sNew) &&;
 
+  //! Forward Datasets.
+  ConstructionData& set(Dataset dsNew) &;
+  ConstructionData&& set(Dataset dsNew) &&;
+
+  //! Constructors
   ConstructionData(Usage u);
   ConstructionData();
 
+  //! Tell if this ConstructionData instance serves as a proxy.
   bool isProxy() const;
+
+  //! Return true if the dataset memeber is not empty.
+  bool hasDataset() const;
 
   //! Forward a NamedEnum object. Enum object is stored in Settings member.
   template <typename NE>
@@ -95,6 +108,8 @@ struct ConstructionData
   std::string createSubObjectKeyWithCounter(std::string key) const;
 
   //! Helper function to get back sub-ConstructionData structs  or shared wares stored in 'subObjectData' and 'sharedWares', respectively.
+  std::map<std::string, std::shared_ptr<const Ware>>::const_iterator getSharedWareWithCounter(
+      std::string key, label_t i) const;
   std::map<std::string, ConstructionData>::const_iterator getSubObjectWithCounter(std::string key,
                                                                                   label_t index
                                                                                   = 0) const;
@@ -102,10 +117,10 @@ struct ConstructionData
   template <typename NR>
   ConstructionData& addSharedWare(NR const& nr = NR("")) &
   {
-    auto key = createSharedWareKeyWithCounter(NR::RT::getReferenceName(), nr.ptr());
+    auto key = createSharedWareKeyWithCounter(NR::getReferenceName(), nr.ptr());
 
     // Next step is crucial for adding shared wares which refer to interface types!
-    //s.set(key, nr.getId());
+    // s.set(key, nr.getId());
     wareSettings.set(key, nr.getId());
     sharedWares.emplace(std::make_pair(key, nr.ptr()));
     return *this;
@@ -117,7 +132,7 @@ struct ConstructionData
     auto key = createSharedWareKeyWithCounter(NR::getReferenceName(), nr.ptr());
 
     // Next step is crucial for adding shared wares which refer to interface types!
-    //s.set(key, nr.getId());
+    // s.set(key, nr.getId());
     wareSettings.set(key, nr.getId());
     sharedWares.emplace(std::make_pair(key, nr.ptr()));
     return std::move(*this);

@@ -74,9 +74,9 @@ StreamLoggingSink::StreamLoggingSink(ConstructionData const& cd) :
     fs->open(path_, std::ios_base::app);
 
     stream_ = fs;
-    acceptLogMessage("Start logging.", severity_);  // muss ich noch ändern
+    acceptLogMessage("Start logging.", severity_);
   } else if (type_ == Type::OSTREAM) {
-    stream_ = std::make_shared<std::ostringstream>();
+    stream_ = std::make_shared<std::stringstream>();
   } else {
     stream_ = std::monostate();
   }
@@ -89,6 +89,11 @@ StreamLoggingSink::~StreamLoggingSink()
     acceptLogMessage("Stop logging, closing file stream.", severity_);
     std::get<sp_fs>(stream_)->close();
   }
+}
+
+void StreamLoggingSink::getStream(StreamType& var)
+{
+  var = stream_;
 }
 
 void StreamLoggingSink::enabelCoutInAdditionImpl(bool flag)
@@ -107,7 +112,6 @@ void StreamLoggingSink::setLogLevelImpl(LogSeverity severity)
 void StreamLoggingSink::acceptLogItemImpl(LogItem&& item) const
 {
   using namespace std;
-  //using os = std::ostringstream;
   using os = std::ostream;
   using fs = std::fstream;
 

@@ -28,15 +28,19 @@ class StreamLoggingSink final :
   public:
   D_DECLARE_PROJECTWARE(StreamLoggingSink)
 
-  using Stream
+  using StreamType
       = std::variant<std::shared_ptr<std::fstream>, std::shared_ptr<std::ostream>, std::monostate>;
 
   static ConstructionValidator const& getConstructionValidator();
 
+  //! Define allowed stream types. OSTREAM case will refer to a std::stringstream.
   D_NAMED_ENUM(Type, STDCOUT, FSTREAM, OSTREAM)
+
+  //! Variable holding log file path.
   D_NAMED_STRING(Path)
+
+  //! Flag, indicating if std::cout is used.
   D_NAMED_BOOL(StdCout)
-  //D_NAMED_REFERENCE()
 
   //! Default constructor, only std::cout for logging.
   StreamLoggingSink();
@@ -50,6 +54,8 @@ class StreamLoggingSink final :
 
   virtual ~StreamLoggingSink() override;
 
+  void getStream(StreamType& var);
+
   private:
   virtual void acceptLogItemImpl(LogItem&& item) const override;
   virtual void enabelCoutInAdditionImpl(bool flag = true) override;
@@ -61,7 +67,7 @@ class StreamLoggingSink final :
   const std::filesystem::path path_;
 
   // std::variant holding a shared pointer
-  Stream stream_;
+  StreamType stream_;
   LogSeverity severity_;
   std::atomic<bool> stdcout_;
 };

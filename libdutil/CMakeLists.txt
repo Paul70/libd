@@ -4,6 +4,7 @@ set(dutil_HEADERS
     constructiondata.h
     constructionvalidator.h
     dataset.h
+    datasetrule.h
     exception.h
     factory.h
     factoryinterface.h
@@ -33,6 +34,7 @@ set(dutil_SOURCES
     constructiondata.cpp
     constructionvalidator.cpp
     dataset.cpp
+    datasetrule.cpp
     exception.cpp
     factory.cpp
     factoryinterface.cpp

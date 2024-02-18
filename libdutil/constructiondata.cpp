@@ -19,6 +19,13 @@ bool ConstructionData::isProxy() const
     return false;
 }
 
+bool ConstructionData::hasDataset() const
+{
+  if (ds.getNumberOfCurrentlyStoredData() == 0)
+    return false;
+  return true;
+}
+
 ConstructionData& ConstructionData::set(Settings const sNew) &
 {
   s = sNew;
@@ -28,6 +35,18 @@ ConstructionData& ConstructionData::set(Settings const sNew) &
 ConstructionData&& ConstructionData::set(Settings sNew) &&
 {
   s = sNew;
+  return std::move(*this);
+}
+
+ConstructionData& ConstructionData::set(Dataset dsNew) &
+{
+  ds = dsNew;
+  return *this;
+}
+
+ConstructionData&& ConstructionData::set(Dataset dsNew) &&
+{
+  ds = dsNew;
   return std::move(*this);
 }
 
@@ -73,6 +92,13 @@ std::map<std::string, ConstructionData>::const_iterator ConstructionData::getSub
 {
   return std::map<std::string, ConstructionData>::const_iterator()
          = subObjectData.find(key + seperator + Utility::toString(index));
+}
+
+std::map<std::string, std::shared_ptr<const Ware>>::const_iterator
+ConstructionData::getSharedWareWithCounter(std::string key, label_t i) const
+{
+  return std::map<std::string, std::shared_ptr<const Ware>>::const_iterator()
+         = sharedWares.find(key + seperator + Utility::toString(i));
 }
 
 }  // namespace DUTIL

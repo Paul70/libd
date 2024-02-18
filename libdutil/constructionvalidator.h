@@ -5,7 +5,7 @@
 #include <string>
 #include <type_traits>
 #include "constructiondata.h"
-#include "namedparameter.h"
+#include "datasetrule.h"
 #include "settingrule.h"
 #include "warelistrule.h"
 
@@ -52,7 +52,7 @@ class ConstructionValidator
   explicit ConstructionValidator(std::vector<SettingRule> settingRules,
                                  std::vector<WarelistRule> warelistRules = {},
                                  ConstructionValidator baseCV = {},
-                                 CheckFunction cf = recursiveCheck);
+                                 CheckFunction cf = recursiveCheck, DatasetRule datasetRule = {});
 
   /*! \brief Use the check function defined at construction to check the given ConstructionData object.
    *
@@ -172,7 +172,7 @@ class ConstructionValidator
     return warePtrVec;
   }
 
-  // check functions
+  // check functions for Settings, Wares and Dataset
   template <typename NE, std::enable_if_t<std::is_enum_v<typename NE::EnumValues>, bool> = false>
   std::string checkNamedEnum(ConstructionData const& cd) const
   {
@@ -209,6 +209,8 @@ class ConstructionValidator
     return checkSharedWareListAndReturnErrors(cd, NR::getReferenceName(),
                                               NR::getReferredTypeName());
   }
+
+  std::string checkDataset(ConstructionData const& cd) const;
 
   private:
   /*! \brief Check function returning settings value.
@@ -286,6 +288,7 @@ class ConstructionValidator
   std::map<std::string, SettingRule> settingRules_;
   std::map<std::string, WarelistRule> warelistRules_;
   CheckFunction check_;
+  DatasetRule datasetRule_;
 };
 
 }  // namespace DUTIL

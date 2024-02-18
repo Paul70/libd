@@ -94,6 +94,16 @@ WarelistRule checkWarelistRule(WarelistRule wr)
 
   return wr;
 }
+
+DatasetRule checkDatasetRule(DatasetRule dsr)
+{
+  if ((dsr.rows != DatasetRule::lengthNotDefined && dsr.columns != DatasetRule::lengthNotDefined)) {
+    D_ASSERT(dsr.rows > 0);
+    D_ASSERT(dsr.columns > 0);
+  }
+
+  return dsr;
+}
 }  // namespace
 
 std::string ConstructionValidator::recursiveCheck(ConstructionValidator const& cv,
@@ -106,6 +116,12 @@ std::string ConstructionValidator::recursiveCheck(ConstructionValidator const& c
     if (!errors.empty()) {
       return errors;
     }
+  }
+
+  // check dataset rules
+  errors = cv.checkDataset(cd);
+  if (!errors.empty()) {
+    return errors;
   }
 
   // check warelist rules for each subobject in cd
@@ -162,10 +178,12 @@ ConstructionValidator::ConstructionValidator() :
 
 ConstructionValidator::ConstructionValidator(std::vector<SettingRule> settingRules,
                                              std::vector<WarelistRule> warelistRules,
-                                             ConstructionValidator baseCV, CheckFunction checkF) :
+                                             ConstructionValidator baseCV, CheckFunction checkF,
+                                             DatasetRule datasetRule) :
     settingRules_(baseCV.settingRules_),
     warelistRules_(baseCV.warelistRules_),
-    check_(baseCV.check_)
+    check_(baseCV.check_),
+    datasetRule_(datasetRule)
 {
   // Put all setting rules and warelist rules into the maps.
   // Base class construction validator rules get overwritten by new rules referring to the same key.
@@ -175,6 +193,8 @@ ConstructionValidator::ConstructionValidator(std::vector<SettingRule> settingRul
   for (auto const& wr : warelistRules) {
     warelistRules_[wr.key] = checkWarelistRule(wr);
   }
+
+  checkDatasetRule(datasetRule);
 
   // Set the check function.
   if (checkF) {
@@ -231,6 +251,31 @@ StringList ConstructionValidator::getListOfSettingRuleKeys() const
     list.push_back(it.first);
   }
   return list;
+}
+
+std::string ConstructionValidator::checkDataset(ConstructionData const& cd) const
+{
+  // check the dataset rule of the validator against the dataset given via
+  // construction data.
+  if (cd.hasDataset()) {
+    if (datasetRule_.rows != DatasetRule::lengthNotDefined
+        && datasetRule_.rows != cd.ds.getRows()) {
+      return "Dataset construction parameter has to contain " + Utility::toString(datasetRule_.rows)
+             + " rows" + ". Dataset actually has " + Utility::toString(cd.ds.getRows()) + " rows.";
+    } else if (datasetRule_.columns != DatasetRule::lengthNotDefined
+               && datasetRule_.columns != cd.ds.getCols()) {
+      return "Dataset construction parameter has to contain "
+             + Utility::toString(datasetRule_.columns) + " columns" + ". Dataset actually has "
+             + Utility::toString(cd.ds.getCols()) + " columns.";
+    } else {
+      return {};
+    }
+  }
+
+  if (datasetRule_.usage == DatasetRule::Usage::MANDATORY) {
+    return "A data set is mandatory for construction of this object instance.";
+  }
+  return {};
 }
 
 Variant ConstructionValidator::checkSettingRuleKeyAndReturnValue(Variant const value,
