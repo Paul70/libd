@@ -26,8 +26,7 @@ struct DatasetRule
   //! Default constructor.
   DatasetRule();
 
-  static DatasetRule forDataset(Usage u, std::string d, Dataset::Type t = Dataset::Type::EMPTY,
-                                label_t r = lengthNotDefined, label_t c = lengthNotDefined);
+  static DatasetRule forDataset(Usage u, std::string d);
 };
 
 }  // namespace DUTIL

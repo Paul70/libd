@@ -51,8 +51,8 @@ class ConstructionValidator
   //! Construct with construction data
   explicit ConstructionValidator(std::vector<SettingRule> settingRules,
                                  std::vector<WarelistRule> warelistRules = {},
-                                 ConstructionValidator baseCV = {},
-                                 CheckFunction cf = recursiveCheck, DatasetRule datasetRule = {});
+                                 ConstructionValidator baseCV = {}, DatasetRule datasetRule = {},
+                                 CheckFunction cf = recursiveCheck);
 
   /*! \brief Use the check function defined at construction to check the given ConstructionData object.
    *
@@ -287,8 +287,8 @@ class ConstructionValidator
   //! Members
   std::map<std::string, SettingRule> settingRules_;
   std::map<std::string, WarelistRule> warelistRules_;
-  CheckFunction check_;
   DatasetRule datasetRule_;
+  CheckFunction check_;
 };
 
 }  // namespace DUTIL

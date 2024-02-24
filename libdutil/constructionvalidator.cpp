@@ -178,12 +178,12 @@ ConstructionValidator::ConstructionValidator() :
 
 ConstructionValidator::ConstructionValidator(std::vector<SettingRule> settingRules,
                                              std::vector<WarelistRule> warelistRules,
-                                             ConstructionValidator baseCV, CheckFunction checkF,
-                                             DatasetRule datasetRule) :
+                                             ConstructionValidator baseCV, DatasetRule datasetRule,
+                                             CheckFunction checkF) :
     settingRules_(baseCV.settingRules_),
     warelistRules_(baseCV.warelistRules_),
-    check_(baseCV.check_),
-    datasetRule_(datasetRule)
+    datasetRule_(datasetRule),
+    check_(baseCV.check_)
 {
   // Put all setting rules and warelist rules into the maps.
   // Base class construction validator rules get overwritten by new rules referring to the same key.
