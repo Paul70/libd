@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Custom class wizard configuration file for libd class.
+-->
+<wizard version="1" kind="class" id="B.DTIME_class" category="A.CustomClasses">
+    <description>Creates a new DTIME class from a template.</description>
+    <displayname>DTIME class</displayname>;
+    <displaycategory>Custom Classes</displaycategory>
+    <files>
+        <file source="class.cpp" target="%ClassName:l%.%CppSourceSuffix%" openeditor="true"/>
+        <file source="class.h" target="%ClassName:l%.%CppHeaderSuffix%" openeditor="true"/>
+    </files>
+    <!-- Create parameter wizard page -->
+    <fieldpagetitle>Class parameters</fieldpagetitle>
+    <fields>
+        <field name="ClassName">
+            <fieldcontrol class="QLineEdit" validator="^[a-zA-Z0-9_]+$" defaulttext="Bla" />
+            <fielddescription>Class name:</fielddescription>
+        </field>
+    </fields>
+</wizard>

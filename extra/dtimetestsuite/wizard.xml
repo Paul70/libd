@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Custom class wizard configuration file for DTIME test suite.
+Copy or link the entire directory to
+- '~/.config/QtProject/qtcreator/templates/wizards' under Linux
+- ? under Windows
+-->
+<wizard version="1" kind="class" id="A.DTIME_test_suite" category="A.CustomClasses">
+    <description>Creates a new DTIME test suite from a template.</description>
+    <displayname>DTIME test suite</displayname>;
+    <displaycategory>Custom Classes</displaycategory>
+    <files>
+        <file source="test.cpp" target="%ClassName:l%.%CppSourceSuffix%" openeditor="true"/>
+    </files>
+    <!-- Create parameter wizard page -->
+    <fieldpagetitle>Test suite parameters</fieldpagetitle>
+    <fields>
+        <field name="ClassName">
+            <fieldcontrol class="QLineEdit" validator="^[a-zA-Z0-9_]+Tests$" defaulttext="BlaTests" />
+            <fielddescription>Test suite class name:</fielddescription>
+        </field>
+        <field name="TestedClassName">
+            <fieldcontrol class="QLineEdit" validator="^[a-zA-Z0-9_]+$" defaulttext="Bla" />
+            <fielddescription>Tested class name:</fielddescription>
+        </field>
+    </fields>
+</wizard>
