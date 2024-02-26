@@ -1,45 +1,43 @@
 #ifndef DUTIL_VARIANT_H
 #define DUTIL_VARIANT_H
-#include "basictypes.h"
-#include "namedenum.h"
-#include "utility.h"
 #include <string>
 #include <type_traits>
 #include <utility>
 #include <variant>
+#include "basictypes.h"
+#include "namedenum.h"
+#include "overload.h"
+#include "utility.h"
 
 namespace DUTIL {
 namespace VariantDetail {
-template<typename T>
+template <typename T>
 struct is_allowed_arithmetic_type :
-    public std::disjunction<std::is_same<std::monostate, T>,
-                            std::is_same<real_t, T>,
-                            std::is_same<label_t, T>,
-                            std::is_same<int64_t, T>,
-                            std::is_same<uint64_t, T>,
-                            std::is_same<bool, T>,
-                            std::is_same<double, T>,
-                            std::is_same<char, T>>
+    public std::disjunction<std::is_same<std::monostate, T>, std::is_same<real_t, T>,
+                            std::is_same<label_t, T>, std::is_same<int64_t, T>,
+                            std::is_same<uint64_t, T>, std::is_same<bool, T>,
+                            std::is_same<double, T>, std::is_same<char, T>>
 {};
 
-template<typename T>
+template <typename T>
 constexpr bool is_allowed_arithmetic_type_v = is_allowed_arithmetic_type<T>::value;
 
-template<typename T>
-struct is_allowed_type : public std::disjunction<is_allowed_arithmetic_type<T>, BasicTypes::is_string<T>>
+template <typename T>
+struct is_allowed_type :
+    public std::disjunction<is_allowed_arithmetic_type<T>, BasicTypes::is_string<T>>
 {};
 
-template<typename T>
+template <typename T>
 constexpr bool is_allowed_type_v = is_allowed_type<T>::value;
 
-template<typename... Ts>
-struct overloaded : Ts...
-{
-    using Ts::operator()...;
-};
-template<typename... Ts>
-overloaded(Ts...) -> overloaded<Ts...>;
-} // namespace VariantDetail
+//template<typename... Ts>
+//struct overloaded : Ts...
+//{
+//    using Ts::operator()...;
+//};
+//template<typename... Ts>
+//overloaded(Ts...) -> overloaded<Ts...>;
+}  // namespace VariantDetail
 
 /*! \brief A standard variant limited to a special set of types.
  *
@@ -58,38 +56,40 @@ overloaded(Ts...) -> overloaded<Ts...>;
 
 class Variant
 {
-public:
-    //! List of allowed types.
-    D_NAMED_ENUM(Type, MONOSTATE, LABEL, INT64, UINT64, DOUBLE, BOOL, CHAR, STRING)
+  public:
+  //! List of allowed types.
+  D_NAMED_ENUM(Type, MONOSTATE, LABEL, INT64, UINT64, DOUBLE, BOOL, CHAR, STRING)
 
-    using DutilVariant = std::variant<std::monostate, label_t, std::int64_t, std::uint64_t, double, bool, char, std::string>;
+  using DutilVariant = std::variant<std::monostate, label_t, std::int64_t, std::uint64_t, double,
+                                    bool, char, std::string>;
 
-    //! Default construct empty variant, current variant type is std::monostate.
-    explicit Variant();
+  //! Default construct empty variant, current variant type is std::monostate.
+  explicit Variant();
 
-    //! Constructor with initial value for variant and type.
-    template<typename InitialType, std::enable_if_t<VariantDetail::is_allowed_type_v<InitialType>, bool> = true>
-    explicit Variant(InitialType const value) :
-        var_(value),
-        type_()
-    {
-        if constexpr (std::is_same_v<InitialType, std::int64_t>)
-            type_ = Type::INT64;
-        else if constexpr (std::is_same_v<InitialType, label_t>)
-            type_ = Type::LABEL;
-        else if constexpr (std::is_same_v<InitialType, std::uint64_t>)
-            type_ = Type::UINT64;
-        else if constexpr (std::is_same_v<InitialType, double>)
-            type_ = Type::DOUBLE;
-        else if constexpr (std::is_same_v<InitialType, bool>)
-            type_ = Type::BOOL;
-        else if constexpr (std::is_same_v<InitialType, char>)
-            type_ = Type::CHAR;
-        else
-            type_ = Type::STRING;
-    }
+  //! Constructor with initial value for variant and type.
+  template <typename InitialType,
+            std::enable_if_t<VariantDetail::is_allowed_type_v<InitialType>, bool> = true>
+  explicit Variant(InitialType const value) :
+      var_(value),
+      type_()
+  {
+    if constexpr (std::is_same_v<InitialType, std::int64_t>)
+      type_ = Type::INT64;
+    else if constexpr (std::is_same_v<InitialType, label_t>)
+      type_ = Type::LABEL;
+    else if constexpr (std::is_same_v<InitialType, std::uint64_t>)
+      type_ = Type::UINT64;
+    else if constexpr (std::is_same_v<InitialType, double>)
+      type_ = Type::DOUBLE;
+    else if constexpr (std::is_same_v<InitialType, bool>)
+      type_ = Type::BOOL;
+    else if constexpr (std::is_same_v<InitialType, char>)
+      type_ = Type::CHAR;
+    else
+      type_ = Type::STRING;
+  }
 
-    /*! \brief Construct from a D_NAMED_ENUM object.
+  /*! \brief Construct from a D_NAMED_ENUM object.
      *
      * The named enum is stored in the variant using the enum's string representation. That is, internally,
      * a named enum is acutally a string value. Use these two constructors as follows:
@@ -101,85 +101,87 @@ public:
      *
      * Regain the enum value from the variant by using the NamedEnum constructor taking a variant object.
      */
-    template<typename NE, std::enable_if_t<std::is_enum_v<typename NE::EnumValues>, int> = true>
-    explicit Variant(NE const &ne) :
-        Variant(ne.toString())
-    {}
-    template<typename NEV, typename std::enable_if_t<std::is_enum_v<NEV>, int> = true>
-    explicit Variant(NEV const &nev) :
-        Variant(fromEnumValue(nev))
-    {}
+  template <typename NE, std::enable_if_t<std::is_enum_v<typename NE::EnumValues>, int> = true>
+  explicit Variant(NE const& ne) :
+      Variant(ne.toString())
+  {}
 
-    //! Check if a Variant::Type value represents a numeric type.
-    static bool isNumeric(Type t);
+  template <typename NEV, typename std::enable_if_t<std::is_enum_v<NEV>, int> = true>
+  explicit Variant(NEV const& nev) :
+      Variant(fromEnumValue(nev))
+  {}
 
-    //! Retrun which type is hold by the variant.
-    Type getType() const;
+  //! Check if a Variant::Type value represents a numeric type.
+  static bool isNumeric(Type t);
 
-    //! Tells if the variant does not hold std::monostate type.
-    bool isValid() const;
+  //! Retrun which type is hold by the variant.
+  Type getType() const;
 
-    //! Tells if the variant holds std::monostate type.
-    bool isMonostate() const;
+  //! Tells if the variant does not hold std::monostate type.
+  bool isValid() const;
 
-    //! Tells if the variant holds std::string type.
-    bool isString() const;
+  //! Tells if the variant holds std::monostate type.
+  bool isMonostate() const;
 
-    //! Tells if the variant holds s numeric type, i.e. label_t, std::int64_t, std::uint64_t or double.
-    bool isNumeric() const;
+  //! Tells if the variant holds std::string type.
+  bool isString() const;
 
-    //! Tells if the variant holds char type.
-    bool isCharacter() const;
+  //! Tells if the variant holds s numeric type, i.e. label_t, std::int64_t, std::uint64_t or double.
+  bool isNumeric() const;
 
-    //! Tells if the variant holds boolean type.
-    bool isBool() const;
+  //! Tells if the variant holds char type.
+  bool isCharacter() const;
 
-    //! Return a copy of the stored variant value as std::string. Shortcut method for getAs<std::string>.
-    std::string toString() const;
-    bool toBool() const;
-    label_t toLabel() const;
-    real_t toReal() const;
+  //! Tells if the variant holds boolean type.
+  bool isBool() const;
 
-    //! Return a copy of the value as the specified type.
-    template<typename T = std::monostate, std::enable_if_t<VariantDetail::is_allowed_type_v<T>, bool> = true>
-    std::pair<bool, T> getAs() const
-    {
-        std::pair<bool, T> result;
-        std::visit(VariantDetail::overloaded{[&result](auto arg) {
-                                                 using VariantType = std::decay_t<decltype(arg)>;
-                                                 if constexpr (std::is_unsigned_v<T> && !std::is_unsigned_v<VariantType>) {
-                                                     if (arg < 0) { // change sign
-                                                         arg *= -1;
-                                                     }
-                                                 }
-                                                 if constexpr (std::is_arithmetic_v<T>) {
-                                                     // both types T and VariantType are arithmetic
-                                                     result.first = std::is_convertible_v<VariantType, T>;
-                                                     if (result.first) {
-                                                         result.second = static_cast<T>(arg);
-                                                         return;
-                                                     }
-                                                     result.second = T(0);
-                                                 } else { // Target type T is string and variant type is arithmetic
-                                                     result.second = Utility::toString(arg);
-                                                     result.first = true;
-                                                     if (result.second.empty())
-                                                         result.first = false;
-                                                 }
-                                             },
-                                             [&result](std::string arg) { // try to convert string into arithmetic type
-                                                 result = Utility::fromString<T>(arg);
-                                             },
-                                             [&result](std::monostate) {
-                                                 result.first = false;
-                                                 result.second = T();
-                                             }},
-                   var_);
+  //! Return a copy of the stored variant value as std::string. Shortcut method for getAs<std::string>.
+  std::string toString() const;
+  bool toBool() const;
+  label_t toLabel() const;
+  real_t toReal() const;
 
-        return result;
-    }
+  //! Return a copy of the value as the specified type.
+  template <typename T = std::monostate,
+            std::enable_if_t<VariantDetail::is_allowed_type_v<T>, bool> = true>
+  std::pair<bool, T> getAs() const
+  {
+    std::pair<bool, T> result;
+    std::visit(Overload{[&result](auto arg) {
+                          using VariantType = std::decay_t<decltype(arg)>;
+                          if constexpr (std::is_unsigned_v<T> && !std::is_unsigned_v<VariantType>) {
+                            if (arg < 0) {  // change sign
+                              arg *= -1;
+                            }
+                          }
+                          if constexpr (std::is_arithmetic_v<T>) {
+                            // both types T and VariantType are arithmetic
+                            result.first = std::is_convertible_v<VariantType, T>;
+                            if (result.first) {
+                              result.second = static_cast<T>(arg);
+                              return;
+                            }
+                            result.second = T(0);
+                          } else {  // Target type T is string and variant type is arithmetic
+                            result.second = Utility::toString(arg);
+                            result.first = true;
+                            if (result.second.empty())
+                              result.first = false;
+                          }
+                        },
+                        [&result](std::string arg) {  // try to convert string into arithmetic type
+                          result = Utility::fromString<T>(arg);
+                        },
+                        [&result](std::monostate) {
+                          result.first = false;
+                          result.second = T();
+                        }},
+               var_);
 
-    /*! \brief Convert the Variant type value into another one.
+    return result;
+  }
+
+  /*! \brief Convert the Variant type value into another one.
      *
      * For example convert
      * Variant with type_ = Type::DOUBLE into Variant with type_ = Type::STRING.
@@ -187,36 +189,37 @@ public:
      * This function basically uses the Variant::getAs function.
      * If the conversion is not feasible, the Variant objects stays unchanged.
      */
-    Variant &convertTo(Type t);
+  Variant& convertTo(Type t);
 
-    /*! \brief Lexicographical operators to compare variant objects.
+  /*! \brief Lexicographical operators to compare variant objects.
      *
      * Operators are implemented using the std::tie pattern.
      * Implemented as friend functions to have lhs and rhs input arguments.
      */
-    friend bool operator==(Variant const &lhs, Variant const &rhs);
-    friend bool operator!=(Variant const &lhs, Variant const &rhs);
+  friend bool operator==(Variant const& lhs, Variant const& rhs);
+  friend bool operator!=(Variant const& lhs, Variant const& rhs);
 
-    /*! \brief Assignment operator.
+  /*! \brief Assignment operator.
      *
      * Operators are implemented using the std::tie pattern.
      * Implemented as friend functions to have lhs and rhs input arguments.
      */
-    template<typename AssignedType, std::enable_if_t<VariantDetail::is_allowed_type_v<AssignedType>, bool> = true>
-    void operator=(AssignedType v)
-    {
-        Variant nV = Variant(v);
-        this->type_ = std::move(nV.type_);
-        this->var_ = std::move(nV.var_);
-    }
+  template <typename AssignedType,
+            std::enable_if_t<VariantDetail::is_allowed_type_v<AssignedType>, bool> = true>
+  void operator=(AssignedType v)
+  {
+    Variant nV = Variant(v);
+    this->type_ = std::move(nV.type_);
+    this->var_ = std::move(nV.var_);
+  }
 
-protected:
-    //! Return a reference to the std::variant member.
-    DutilVariant const &get() const;
+  protected:
+  //! Return a reference to the std::variant member.
+  DutilVariant const& get() const;
 
-private:
-    DutilVariant var_;
-    Type type_;
+  private:
+  DutilVariant var_;
+  Type type_;
 };
-} // namespace DUTIL
-#endif // DUTIL_VARIANT_H
+}  // namespace DUTIL
+#endif  // DUTIL_VARIANT_H
