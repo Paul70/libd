@@ -1,5 +1,6 @@
 set(dutil_HEADERS
     basictypes.h
+    clock.h
     concretefactory.h
     constructiondata.h
     constructionvalidator.h
@@ -16,12 +17,15 @@ set(dutil_HEADERS
     namedparameter.h
     namedreference.h
     namedreferenceparameter.h
+    now.h
+    overload.h
     projectware.h
     settingrule.h
     settings.h
     staticpointercast.h
     streamloggingsink.h
-    now.h
+    ticker.h
+    time.h
     types.h
     utility.h
     variant.h
@@ -31,6 +35,7 @@ set(dutil_HEADERS
 
 set(dutil_SOURCES
     basictypes.cpp
+    clock.cpp
     constructiondata.cpp
     constructionvalidator.cpp
     dataset.cpp
@@ -47,6 +52,7 @@ set(dutil_SOURCES
     settingrule.cpp
     settings.cpp
     streamloggingsink.cpp
+    ticker.cpp
     utility.cpp
     variant.cpp
     ware.cpp

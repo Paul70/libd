@@ -120,12 +120,12 @@ void StreamLoggingSink::acceptLogItemImpl(LogItem&& item) const
       case Type::STDCOUT:
         break;
       case Type::FSTREAM:
-        item.time.putSavedToStream<fs>(*get<shared_ptr<fs>>(stream_).get());
+        item.clock.putSavedTimePointToStream<fs>(*get<shared_ptr<fs>>(stream_).get());
         *get<shared_ptr<fs>>(stream_).get() << '\t' << item.severity.toString() << " Log"
                                             << ":" << '\t' << item.message << std::endl;
         break;
       case Type::OSTREAM:
-        item.time.putSavedToStream<os>(*get<shared_ptr<os>>(stream_).get());
+        item.clock.putSavedTimePointToStream<os>(*get<shared_ptr<os>>(stream_).get());
         *get<shared_ptr<os>>(stream_).get() << '\t' << item.severity.toString() << " Log"
                                             << ":" << '\t' << item.message << std::endl;
         break;
@@ -134,7 +134,7 @@ void StreamLoggingSink::acceptLogItemImpl(LogItem&& item) const
     }
 
     if (stdcout_) {
-      item.time.putSavedToStream();
+      item.clock.putSavedTimePointToStream();
       std::cout << '\t' << item.severity.toString() << " Log"
                 << ":" << '\t' << item.message << std::endl;
     }

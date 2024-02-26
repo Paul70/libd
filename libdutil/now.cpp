@@ -1,72 +1,42 @@
 #include "libdutil/now.h"
-#include "libdutil/constructiondata.h"
 #include "libdutil/constructionvalidator.h"
 
 using namespace DUTIL;
 
-D_DEFINE_PROJECTWARE(Now);
+//Now::Now() :
+//    timepoint_(std::chrono::system_clock::now()),
+//    tick_(0),
+//    clock_(Now::Clock::SYSTEM),
+//    zone_(Now::Zone::LOCAL)
+//{}
 
-ConstructionValidator const& Now::getConstructionValidator()
-{
-  using SR = SettingRule;
-  static ConstructionValidator cv(
-      {[]() {
-         SR sr = SR::forNamedEnum<Now::Clock>(
-             SR::Usage::MANDATORY_WITH_DEFAULT,
-             "Define clock type, default is std::chrono::system_clock.");
-         sr.defaultValue = toString(Now::Clock::SYSTEM);
-         return sr;
-       }(),
-       []() {
-         SR sr = SR::forNamedEnum<Now::Zone>(SR::Usage::MANDATORY_WITH_DEFAULT,
-                                             "Set time zone, default is local system time zone.");
-         sr.defaultValue = toString(Now::Zone::LOCAL);
-         return sr;
-       }(),
-       []() {
-         SR sr = SR::forNamedParameter<Now::TickParam>(SR::Usage::MANDATORY_WITH_DEFAULT,
-                                                       "Set the starting tick value.");
-         sr.maximalValue = 0;
-         sr.defaultValue = 0;
-         return sr;
-       }()},
-      {});
-  return cv;
-}
+//Now::Now(ConstructionData const& cd) :
+//    timepoint_(),
+//    tick_(getConstructionValidator().validateNamedParameter<Now::TickParam>(cd)),
+//    clock_(getConstructionValidator().validateNamedEnum<Now::Clock>(cd)),
+//    zone_(getConstructionValidator().validateNamedEnum<Now::Zone>(cd))
+//{
+//  setTimePoint();
+//}
 
-Now::Now() :
-    timepoint_(std::chrono::system_clock::now()),
-    tick_(0),
-    clock_(Now::Clock::SYSTEM),
-    zone_(Now::Zone::LOCAL)
-{}
+//void Now::advance(Tick ticks)
+//{
+//return advanceImpl(ticks);
+//setTimePoint();
+//return ++tick_;
+//}
 
-Now::Now(ConstructionData const& cd) :
-    timepoint_(),
-    tick_(getConstructionValidator().validateNamedParameter<Now::TickParam>(cd)),
-    clock_(getConstructionValidator().validateNamedEnum<Now::Clock>(cd)),
-    zone_(getConstructionValidator().validateNamedEnum<Now::Zone>(cd))
-{
-  setTimePoint();
-}
+//void Now::setTimePoint()
+//{
+//  if (clock_ == Clock::SYSTEM) {
+//    auto tp = std::chrono::system_clock::now();
+//    timepoint_ = tp;
 
-Now::Tick Now::advance()
-{
-  setTimePoint();
-  return ++tick_;
-}
-
-void Now::setTimePoint()
-{
-  if (clock_ == Clock::SYSTEM) {
-    auto tp = std::chrono::system_clock::now();
-    timepoint_ = tp;
-
-  } else if (clock_ == Clock::STEADY) {
-    auto tp = std::chrono::steady_clock::now();
-    timepoint_ = tp;
-  } else {
-    auto tp = std::chrono::high_resolution_clock::now();
-    timepoint_ = tp;
-  }
-}
+//  } else if (clock_ == Clock::STEADY) {
+//    auto tp = std::chrono::steady_clock::now();
+//    timepoint_ = tp;
+//  } else {
+//    auto tp = std::chrono::high_resolution_clock::now();
+//    timepoint_ = tp;
+//  }
+//}
