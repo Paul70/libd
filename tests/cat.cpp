@@ -20,8 +20,9 @@ ConstructionValidator const& Cat::getConstructionValidator()
           return SR::forNamedParameter<Cat::Age>(SR::Usage::MANDATORY_NO_DEFAULT, "The current age of this tiger.");
         }()
         },
-        {}, // empty warelist rules map
-        ProjectWare::getConstructionValidator());
+        {} // empty warelist rules map
+        //ProjectWare::getConstructionValidator()
+        );
   // clang-format on
   return cv;
 }

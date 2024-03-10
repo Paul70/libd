@@ -172,7 +172,7 @@ TEST_F(ConstructionDataTests, setConcreteClassParameter_worksAsExpected)
 {
   ConstructionData cd = ConstructionData().setConcreteClassParameter<TESTS::CompoundWareA>();
   ASSERT_EQ(TESTS::CompoundWareA::getClassName(),
-            cd.s.value(Ware::Type::getParameterName()).toString());
+            cd.s.value(Ware::DUTIL_Ware_Type::getParameterName()).toString());
 }
 
 TEST_F(ConstructionDataTests, addSharedWare_worksAsExpected)

@@ -44,14 +44,15 @@ Clock::Clock() :
     clock_(std::chrono::system_clock()),
     type_(Clock::Type::SYSTEM),
     zone_(Zone::LOCAL),
-    timepoint_(),
-    startTime_ms_(setStartTimeToNow())
-{}
+    intermediate_(),
+    start_()
+{
+  initialize();
+}
 
 Clock::Clock(ConstructionData const& cd) :
     type_(getConstructionValidator().validateNamedEnum<Clock::Type>(cd)),
-    zone_(getConstructionValidator().validateNamedEnum<Clock::Zone>(cd)),
-    startTime_ms_(getConstructionValidator().validateNamedParameter<Clock::StartTime>(cd))
+    zone_(getConstructionValidator().validateNamedEnum<Clock::Zone>(cd))
 {
   setTimePoint();
 }
@@ -68,22 +69,18 @@ Clock::Type Clock::getType() const
 
 void Clock::initialize()
 {
-  // sets the time point to the current clock time
-  advance();
-
-  // defines the value for the starting time in milli seconds
+  // sets the start and intermediate time point to the current clock time
   std::visit(Overload{[&](std::chrono::time_point<std::chrono::system_clock> tp) {
-                        startTime_ms_ = tp.time_since_epoch().count();
+                        if (tp.time_since_epoch() == tp.min().time_since_epoch())
+                          return;
                       },
                       [&](std::chrono::time_point<std::chrono::steady_clock> tp) {
-                        startTime_ms_ = tp.time_since_epoch().count();
+                        if (tp.time_since_epoch() == tp.min().time_since_epoch())
+                          return;
                       }},
-             timepoint_);
-}
-
-TIME::milli_sec_t Clock::getStartTime_ms() const
-{
-  return startTime_ms_;
+             start_);
+  setStartTimePoint();
+  advance();
 }
 
 void Clock::advance()
@@ -91,14 +88,55 @@ void Clock::advance()
   setTimePoint();
 }
 
+TIME::milli_sec_t Clock::elapsedMilliSec() const
+{
+  return std::chrono::milliseconds(elapsedNanoSec()).count();
+}
+
+TIME::nano_sec_t Clock::elapsedNanoSec() const
+{
+  // check if starting and intermediate time point variant have the same index.
+  D_ASSERT(start_.index() == intermediate_.index());
+
+  TIME::nano_sec_t elapsed;
+  std::visit(
+      Overload{[&](std::chrono::system_clock) {
+                 auto tp1 = getStartTimePoint<std::chrono::system_clock::time_point>();
+                 auto tp2 = getIntermediateTimePoint<std::chrono::system_clock::time_point>();
+                 elapsed = (tp2 - tp1).count();
+                 return;
+               },
+               [&](std::chrono::steady_clock) {
+                 auto tp1 = getStartTimePoint<std::chrono::steady_clock::time_point>();
+                 auto tp2 = getIntermediateTimePoint<std::chrono::steady_clock::time_point>();
+                 elapsed = (tp2 - tp1).count();
+                 return;
+               }},
+      clock_);
+
+  return elapsed;
+}
+
 void Clock::setTimePoint()
 {
   std::visit(Overload{
                  [&](std::chrono::system_clock) {
                    if (type_ == Type::SYSTEM)
-                     timepoint_ = forSystemOrHighResolutionType_Now();
+                     intermediate_ = forSystemOrHighResolutionType_Now();
                  },
-                 [&](std::chrono::steady_clock c) { timepoint_ = c.now(); },
+                 [&](std::chrono::steady_clock c) { intermediate_ = c.now(); },
+             },
+             clock_);
+}
+
+void Clock::setStartTimePoint()
+{
+  std::visit(Overload{
+                 [&](std::chrono::system_clock) {
+                   if (type_ == Type::SYSTEM)
+                     start_ = forSystemOrHighResolutionType_Now();
+                 },
+                 [&](std::chrono::steady_clock c) { start_ = c.now(); },
              },
              clock_);
 }

@@ -6,6 +6,8 @@
 #include "projectware.h"
 #include "time.h"
 
+#include <chrono>
+
 namespace DUTIL {
 class ConstructionValidator;
 struct ConstructionData;
@@ -74,18 +76,48 @@ class Clock final : public ProjectWare, public D_NAMED_CLASS(::DUTIL::Clock)
   Clock::Zone getTimeZone() const;
 
   //! Return the clock type.
-  Clock::Type getType() const;
+  DUTIL::Clock::Type getType() const;
 
-  //! Use the current time as start time.
+  /*! \brief Sets both the starting and intermediate time point to now.
+   *
+   * Determines now due to the specified clock type by calling the
+   * clock's now() method.
+   * Method does nothing if start time point is already set.
+   */
   void initialize();
 
   //! Return the start time in milli seconds
   TIME::milli_sec_t getStartTime_ms() const;
 
-  //! Set the time point to the current clock time.
+  /*! \brief Set the intermediate time point to the current clock time.
+   *
+   * Determines now due to the specified clock type by calling the
+   * clock's now() method.
+   */
   void advance();
 
+  /*! \brief Determines the duration between starting and intermediate
+   *  time point in milliseconds.
+   *
+   * Asserts in case the clock object is not initialized.
+   * Calculation internally is based on nanoseconds
+   */
+  TIME::milli_sec_t elapsedMilliSec() const;
+  TIME::nano_sec_t elapsedNanoSec() const;
+
   TIME::milli_sec_t timeSinceEpoch_milli_sec() const;
+
+  template <typename T>
+  T getStartTimePoint() const
+  {
+    return std::get<T>(start_);
+  }
+
+  template <typename T>
+  T getIntermediateTimePoint() const
+  {
+    return std::get<T>(intermediate_);
+  }
 
   /*! \brief Put saved time point into a std stream object.
    *
@@ -95,7 +127,7 @@ class Clock final : public ProjectWare, public D_NAMED_CLASS(::DUTIL::Clock)
   template <typename T = std::ostream, typename Clock = std::chrono::system_clock>
   void putSavedTimePointToStream(T& stream = std::cout) const
   {
-    auto tp = std::get<std::chrono::time_point<Clock>>(timepoint_);
+    auto tp = std::get<std::chrono::time_point<Clock>>(intermediate_);
     const std::time_t t_c = Clock::to_time_t(tp);
     if (zone_ == Zone::LOCAL)
       stream << std::put_time(std::localtime(&t_c), "%F %T");
@@ -110,13 +142,16 @@ class Clock final : public ProjectWare, public D_NAMED_CLASS(::DUTIL::Clock)
                                  std::chrono::time_point<std::chrono::steady_clock>>;
 
   void setTimePoint();
+  void setStartTimePoint();
   TimePoint forSystemOrHighResolutionType_Now() const;
 
+  // Attributes defined at construction and not changable.
   const ClockObject clock_;
   const Type type_;
   const Zone zone_;
-  TimePoint timepoint_;
-  TIME::milli_sec_t startTime_ms_;
+
+  TimePoint intermediate_;
+  TimePoint start_;
 };
 
 }  // namespace DUTIL

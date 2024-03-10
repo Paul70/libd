@@ -1,8 +1,9 @@
 #ifndef DUTIL_NAMEDENUM_H
 #define DUTIL_NAMEDENUM_H
-#include "basictypes.h"
-#include "utility.h"
 #include <map>
+#include "basictypes.h"
+#include "exception.h"
+#include "utility.h"
 
 namespace DUTIL {
 class Variant;
@@ -11,7 +12,7 @@ namespace NamedEnumDetail {
 //! Helper for calling libdutil throw exception macro.
 void dealWithExcpetion(const std::string msg);
 
-template<typename ENUM_BASE_TYPE>
+template <typename ENUM_BASE_TYPE>
 using MapType = std::map<ENUM_BASE_TYPE, std::string>;
 
 /*! \brief Return Variant value as string
@@ -19,51 +20,52 @@ using MapType = std::map<ENUM_BASE_TYPE, std::string>;
  * See also DUTIL::Variant::toString function.
  * If no conversion is possible, function returns an empty string.
  */
-std::string variantToString(DUTIL::Variant const &variant);
+std::string variantToString(DUTIL::Variant const& variant);
 
 /*! \brief Fill the map with enum value strings
  *
  * Throws an exception in case of unconvenient string arguments.
  */
-template<typename ENUM_BASE_TYPE>
-void initNameMap(MapType<ENUM_BASE_TYPE> &map, std::string const &enumName, std::string const &arg)
+template <typename ENUM_BASE_TYPE>
+void initNameMap(MapType<ENUM_BASE_TYPE>& map, std::string const& enumName, std::string const& arg)
 {
-    StringList list = Utility::split(arg);
-    ENUM_BASE_TYPE initVal = 0;
+  StringList list = Utility::split(arg);
+  ENUM_BASE_TYPE initVal = 0;
 
-    for (auto arg : list) {
-        if (arg.find('=') != std::string::npos) {
-            auto nameValuePair = Utility::split(arg, '=');
-            if (nameValuePair.size() != 2) {
-                dealWithExcpetion("Parsing of enum argument list failed.");
-            }
-            auto value = Utility::fromString<ENUM_BASE_TYPE>(nameValuePair[1]);
-            if (!value.first) {
-                dealWithExcpetion("Could not convert enum argument into ENUM_BASE_TYPE of '" + enumName + "'.");
-            }
-            initVal = value.second;
-            arg = nameValuePair[0];
-        }
-        map.emplace(std::make_pair(initVal++, arg));
+  for (auto arg : list) {
+    if (arg.find('=') != std::string::npos) {
+      auto nameValuePair = Utility::split(arg, '=');
+      if (nameValuePair.size() != 2) {
+        dealWithExcpetion("Parsing of enum argument list failed.");
+      }
+      auto value = Utility::fromString<ENUM_BASE_TYPE>(nameValuePair[1]);
+      if (!value.first) {
+        dealWithExcpetion("Could not convert enum argument into ENUM_BASE_TYPE of '" + enumName
+                          + "'.");
+      }
+      initVal = value.second;
+      arg = nameValuePair[0];
     }
+    map.emplace(std::make_pair(initVal++, arg));
+  }
 }
 
 /*! \brief Get a list of all registered enum value strings.
  *
  * This function does not throw exceptions.
  */
-template<typename ENUM_BASE_TYPE>
-StringList getListOfAllowedValues(MapType<ENUM_BASE_TYPE> const &map) noexcept
+template <typename ENUM_BASE_TYPE>
+StringList getListOfAllowedValues(MapType<ENUM_BASE_TYPE> const& map) noexcept
 {
-    if (map.empty()) {
-        return StringList{};
-    }
-    StringList list;
-    list.reserve(map.size());
-    for (auto const &node : map) {
-        list.push_back(node.second);
-    }
-    return list;
+  if (map.empty()) {
+    return StringList{};
+  }
+  StringList list;
+  list.reserve(map.size());
+  for (auto const& node : map) {
+    list.push_back(node.second);
+  }
+  return list;
 }
 
 /*! \brief Return corresponding base type to given enum string value.
@@ -73,32 +75,34 @@ StringList getListOfAllowedValues(MapType<ENUM_BASE_TYPE> const &map) noexcept
  * If that string is not found, an exception is thrown. In case of an empty input
  * string, the defalut enum value is used as return value.
  */
-template<typename ENUM_BASE_TYPE>
-ENUM_BASE_TYPE fromStringToBaseType(MapType<ENUM_BASE_TYPE> const &map, ENUM_BASE_TYPE defaultValue, std::string const &input)
+template <typename ENUM_BASE_TYPE>
+ENUM_BASE_TYPE fromStringToBaseType(MapType<ENUM_BASE_TYPE> const& map, ENUM_BASE_TYPE defaultValue,
+                                    std::string const& input)
 {
-    std::string str = Utility::trim(input);
-    if (str.empty()) {
-        return defaultValue;
-    }
+  std::string str = Utility::trim(input);
+  if (str.empty()) {
+    return defaultValue;
+  }
 
-    // look up string in map
-    for (auto const &node : map) {
-        if (node.second == str) {
-            return node.first;
-        }
+  // look up string in map
+  for (auto const& node : map) {
+    if (node.second == str) {
+      return node.first;
     }
+  }
 
-    // string not found
-    std::string allowedValues;
-    for (auto const &node : map) {
-        allowedValues += node.second + ",";
-    }
-    NamedEnumDetail::dealWithExcpetion("The input string '" + input
-                                       + "' is not registered as an enum value. Allowed values are:" + allowedValues);
-    return ENUM_BASE_TYPE();
+  // string not found
+  std::string allowedValues;
+  for (auto const& node : map) {
+    allowedValues += node.second + ",";
+  }
+  NamedEnumDetail::dealWithExcpetion("The input string '" + input
+                                     + "' is not registered as an enum value. Allowed values are:"
+                                     + allowedValues);
+  return ENUM_BASE_TYPE();
 }
 
-} // namespace NamedEnumDetail
+}  // namespace NamedEnumDetail
 
 /*! \brief NamedEnum, a smart enum knowing its type name.
  *
@@ -115,141 +119,141 @@ ENUM_BASE_TYPE fromStringToBaseType(MapType<ENUM_BASE_TYPE> const &map, ENUM_BAS
  * Each named enum automatically has an "END_ENTRY" to be able to iterate easily over all enum type values.
  */
 
-template<typename DERIVED_ENUM_CLASS, typename ENUM_BASE_TYPE>
+template <typename DERIVED_ENUM_CLASS, typename ENUM_BASE_TYPE>
 class NamedEnumBase
 {
-public:
-    //! Check if enum base type is allowed and offers required, arithmetic operations.
-    static_assert(std::is_arithmetic_v<ENUM_BASE_TYPE>, "Enum Base Type has to be an arithmetic type.");
+  public:
+  //! This string is not allowed as named enum
+  static constexpr const char* NOT_ALLOWED{"DUTIL_Ware_Type"};
 
-    //! Default construct named enum object. Default value is the first enum given in the list.
-    explicit NamedEnumBase() :
-        value_(NamedEnumBase::getDefaultValue())
-    {}
+  //! Check if enum base type is allowed and offers required, arithmetic operations.
+  static_assert(std::is_arithmetic_v<ENUM_BASE_TYPE>,
+                "Enum Base Type has to be an arithmetic type.");
 
-    //! Construct from ENUM_BASE_TYPE object.
-    explicit NamedEnumBase(ENUM_BASE_TYPE value) :
-        value_(value)
-    {
-        if (!isValidValue(value)) {
-            NamedEnumDetail::dealWithExcpetion("Attempted initialization of named enum '" + DERIVED_ENUM_CLASS::getEnumName()
-                                               + "' with invalid value '" + Utility::arithmeticToString(value) + "'");
-        }
+  static void checkName()
+  {
+    if (DERIVED_ENUM_CLASS::getEnumName() == NOT_ALLOWED) {
+      D_ASSERT_MSG(false, "Enum name is not allowed.");
     }
+  }
 
-    /*! \brief Construct from a std::string object.
+  //! Default construct named enum object. Default value is the first enum given in the list.
+  explicit NamedEnumBase() :
+      value_(NamedEnumBase::getDefaultValue())
+  {}
+
+  //! Construct from ENUM_BASE_TYPE object.
+  explicit NamedEnumBase(ENUM_BASE_TYPE value) :
+      value_(value)
+  {
+    checkName();
+    if (!isValidValue(value)) {
+      NamedEnumDetail::dealWithExcpetion(
+          "Attempted initialization of named enum '" + DERIVED_ENUM_CLASS::getEnumName()
+          + "' with invalid value '" + Utility::arithmeticToString(value) + "'");
+    }
+  }
+
+  /*! \brief Construct from a std::string object.
      *
      * Construction from std::string means to look up the string inside the map and
      * to identify the corresponding ENUM_BASE_TYPE_VALUE. If the input string is not
      * found, an exception is thrown.
      */
-    explicit NamedEnumBase(std::string const &value) :
-        NamedEnumBase(NamedEnumBase::fromStringToBaseType(value))
-    {}
+  explicit NamedEnumBase(std::string const& value) :
+      NamedEnumBase(NamedEnumBase::fromStringToBaseType(value))
+  {
+    checkName();
+  }
 
-    /*! \brief Construct from DUTIL::Variant object.
+  /*! \brief Construct from DUTIL::Variant object.
      *
      * This constructor delegates the construction to the NamedEnumBase(std::string const & value) constructor.
      */
-    explicit NamedEnumBase(DUTIL::Variant const &variant) :
-        NamedEnumBase(NamedEnumDetail::variantToString(variant))
-    {}
+  explicit NamedEnumBase(DUTIL::Variant const& variant) :
+      NamedEnumBase(NamedEnumDetail::variantToString(variant))
+  {
+    checkName();
+  }
 
-    //    NamedEnumBase &operator=(NamedEnumBase const &other)
-    //    {
-    //        if (this != &other) // prevent self-assignment
-    //        {
-    //            var = other.var;
-    //            base = new Foobase(other.GetBaseValue());
-    //        }
-    //        return *this;
-    //    }
-
-    /*! \brief Conversion operator
+  /*! \brief Conversion operator
      *
      * Define an implicit conversion operator which converts a NamedEnum value
      * in its underlying base type (by default, this base type is int or DUTIL::label_t, respectively).
      * See tests for an example how to use this method.
      */
-    operator ENUM_BASE_TYPE() const
-    {
-        return value_;
-    }
+  operator ENUM_BASE_TYPE() const { return value_; }
 
-    //! Return the current enum name.
-    std::string toString() const
-    {
-        return NamedEnumBase::toString(value_);
-    }
+  //! Return the current enum name.
+  std::string toString() const { return NamedEnumBase::toString(value_); }
 
-    static std::string fromBaseType(ENUM_BASE_TYPE v)
-    {
-        if (isValidValue(v))
-            return toString(v);
-        else
-            return "";
-    }
+  static std::string fromBaseType(ENUM_BASE_TYPE v)
+  {
+    if (isValidValue(v))
+      return toString(v);
+    else
+      return "";
+  }
 
-    //! Return the number of registered enum names.
-    static label_t size()
-    {
-        auto map = getNameMap();
-        return map.size();
-    }
+  //! Return the number of registered enum names.
+  static label_t size()
+  {
+    auto map = getNameMap();
+    return map.size();
+  }
 
-    //! Return a list containing all defined enum names.
-    static StringList getAllowedNames()
-    {
-        return NamedEnumDetail::getListOfAllowedValues(getNameMap());
-    }
+  //! Return a list containing all defined enum names.
+  static StringList getAllowedNames()
+  {
+    return NamedEnumDetail::getListOfAllowedValues(getNameMap());
+  }
 
-protected:
-    static ENUM_BASE_TYPE fromStringToBaseType(std::string input)
-    {
-        return NamedEnumDetail::fromStringToBaseType<ENUM_BASE_TYPE>(getNameMap(), getDefaultValue(), input);
-    }
+  protected:
+  static ENUM_BASE_TYPE fromStringToBaseType(std::string input)
+  {
+    return NamedEnumDetail::fromStringToBaseType<ENUM_BASE_TYPE>(getNameMap(), getDefaultValue(),
+                                                                 input);
+  }
 
-    static std::string toString(ENUM_BASE_TYPE aBaseTypeValue)
-    {
-        if (!isValidValue(aBaseTypeValue)) {
-            NamedEnumDetail::dealWithExcpetion(
-                "'" + Utility::arithmeticToString(aBaseTypeValue)
-                + "' is not a registered base type value corresponding to a valid enum parameter.");
-        }
-        return getNameMap().at(aBaseTypeValue);
+  static std::string toString(ENUM_BASE_TYPE aBaseTypeValue)
+  {
+    if (!isValidValue(aBaseTypeValue)) {
+      NamedEnumDetail::dealWithExcpetion(
+          "'" + Utility::arithmeticToString(aBaseTypeValue)
+          + "' is not a registered base type value corresponding to a valid enum parameter.");
     }
+    return getNameMap().at(aBaseTypeValue);
+  }
 
-    static void initNameMap(NamedEnumDetail::MapType<ENUM_BASE_TYPE> &map)
-    {
-        NamedEnumDetail::initNameMap(map, DERIVED_ENUM_CLASS::getEnumName(), DERIVED_ENUM_CLASS::getFullArgumentsString());
+  static void initNameMap(NamedEnumDetail::MapType<ENUM_BASE_TYPE>& map)
+  {
+    NamedEnumDetail::initNameMap(map, DERIVED_ENUM_CLASS::getEnumName(),
+                                 DERIVED_ENUM_CLASS::getFullArgumentsString());
+  }
+
+  static NamedEnumDetail::MapType<ENUM_BASE_TYPE>& getNameMap()
+  {
+    // static map at compile time
+    static NamedEnumDetail::MapType<ENUM_BASE_TYPE> nameMap;
+    if (nameMap.empty()) {
+      initNameMap(nameMap);
     }
+    return nameMap;
+  }
 
-    static NamedEnumDetail::MapType<ENUM_BASE_TYPE> &getNameMap()
-    {
-        // static map at compile time
-        static NamedEnumDetail::MapType<ENUM_BASE_TYPE> nameMap;
-        if (nameMap.empty()) {
-            initNameMap(nameMap);
-        }
-        return nameMap;
-    }
+  static ENUM_BASE_TYPE getDefaultValue() { return getNameMap().cbegin()->first; }
 
-    static ENUM_BASE_TYPE getDefaultValue()
-    {
-        return getNameMap().cbegin()->first;
-    }
+  static bool isValidValue(ENUM_BASE_TYPE key)
+  {
+    NamedEnumDetail::MapType<ENUM_BASE_TYPE> const& map = getNameMap();
+    return (map.find(key) != map.cend());
+  }
 
-    static bool isValidValue(ENUM_BASE_TYPE key)
-    {
-        NamedEnumDetail::MapType<ENUM_BASE_TYPE> const &map = getNameMap();
-        return (map.find(key) != map.cend());
-    }
-
-private:
-    ENUM_BASE_TYPE value_;
+  private:
+  ENUM_BASE_TYPE value_;
 };
 
-} // namespace DUTIL
+}  // namespace DUTIL
 
 /*! \brief Macro for defining a named class that wrapps arund a user enum definition
  *
@@ -276,47 +280,47 @@ private:
  *
  * Note, the [[maybe_unused]] tag surpresses warnigns treated as errors.
  */
-#define D_NAMED_WRAPPED_ENUM(ENUM_NAME, ENUM_TYPE, ...) \
-    class ENUM_NAME : public DUTIL::NamedEnumBase<ENUM_NAME, ENUM_TYPE> \
-    { \
-    public: \
-        using EnumValues = enum : ENUM_TYPE { __VA_ARGS__, END_ENTRY }; \
-        using DUTIL::NamedEnumBase<ENUM_NAME, ENUM_TYPE>::NamedEnumBase; \
-        ENUM_NAME(EnumValues value) : \
-            DUTIL::NamedEnumBase<ENUM_NAME, ENUM_TYPE>(value) \
-        {} \
-        ENUM_NAME() : \
-            DUTIL::NamedEnumBase<ENUM_NAME, ENUM_TYPE>() \
-        {} \
-        EnumValues value() const \
-        { \
-            return static_cast<EnumValues>(ENUM_TYPE(*this)); \
-        } \
-        [[maybe_unused]] friend ENUM_NAME fromEnumValue(EnumValues const &value) \
-        { \
-            return ENUM_NAME(value); \
-        } \
-        [[maybe_unused]] friend std::string toString(EnumValues const &value) \
-        { \
-            return NamedEnumBase<ENUM_NAME, ENUM_TYPE>::toString(value); \
-        } \
-        static const std::string getEnumName() \
-        { \
-            return #ENUM_NAME; \
-        } \
-        static const std::string getArgumentsString() \
-        { \
-            return #__VA_ARGS__; \
-        } \
-        static const std::string getFullArgumentsString() \
-        { \
-            std::string s1{#__VA_ARGS__}; \
-            std::string s2{", END_ENTRY"}; \
-            return s1 + s2; \
-        } \
-    };
+#define D_NAMED_WRAPPED_ENUM(ENUM_NAME, ENUM_TYPE, ...)                      \
+  class ENUM_NAME : public DUTIL::NamedEnumBase<ENUM_NAME, ENUM_TYPE>        \
+  {                                                                          \
+public:                                                                      \
+    using EnumValues = enum : ENUM_TYPE { __VA_ARGS__, END_ENTRY };          \
+    using DUTIL::NamedEnumBase<ENUM_NAME, ENUM_TYPE>::NamedEnumBase;         \
+    ENUM_NAME(EnumValues value) :                                            \
+        DUTIL::NamedEnumBase<ENUM_NAME, ENUM_TYPE>(value)                    \
+    {}                                                                       \
+    ENUM_NAME() :                                                            \
+        DUTIL::NamedEnumBase<ENUM_NAME, ENUM_TYPE>()                         \
+    {}                                                                       \
+    EnumValues value() const                                                 \
+    {                                                                        \
+      return static_cast<EnumValues>(ENUM_TYPE(*this));                      \
+    }                                                                        \
+    [[maybe_unused]] friend ENUM_NAME fromEnumValue(EnumValues const& value) \
+    {                                                                        \
+      return ENUM_NAME(value);                                               \
+    }                                                                        \
+    [[maybe_unused]] friend std::string toString(EnumValues const& value)    \
+    {                                                                        \
+      return NamedEnumBase<ENUM_NAME, ENUM_TYPE>::toString(value);           \
+    }                                                                        \
+    static const std::string getEnumName()                                   \
+    {                                                                        \
+      return #ENUM_NAME;                                                     \
+    }                                                                        \
+    static const std::string getArgumentsString()                            \
+    {                                                                        \
+      return #__VA_ARGS__;                                                   \
+    }                                                                        \
+    static const std::string getFullArgumentsString()                        \
+    {                                                                        \
+      std::string s1{#__VA_ARGS__};                                          \
+      std::string s2{", END_ENTRY"};                                         \
+      return s1 + s2;                                                        \
+    }                                                                        \
+  };
 
 //! Shortcut macro for defining a named enum with DUTIL::lable_t, that is int, its as base type
 #define D_NAMED_ENUM(ENUM_NAME, ...) D_NAMED_WRAPPED_ENUM(ENUM_NAME, DUTIL::label_t, __VA_ARGS__)
 
-#endif // DUTIL_NAMEDENUM_H
+#endif  // DUTIL_NAMEDENUM_H

@@ -27,8 +27,8 @@ ConstructionValidator const& Base::getConstructionValidator()
          WarelistRule wlr = WarelistRule::forSubobject<BaseWareAInstance>("my own ware A");
          wlr.usage = WarelistRule::Usage::MANDATORY;
          return wlr;
-       }()},
-      ProjectWare::getConstructionValidator());
+       }()}  //ProjectWare::getConstructionValidator()
+  );
 
   return cv;
 }

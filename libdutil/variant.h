@@ -29,14 +29,6 @@ struct is_allowed_type :
 
 template <typename T>
 constexpr bool is_allowed_type_v = is_allowed_type<T>::value;
-
-//template<typename... Ts>
-//struct overloaded : Ts...
-//{
-//    using Ts::operator()...;
-//};
-//template<typename... Ts>
-//overloaded(Ts...) -> overloaded<Ts...>;
 }  // namespace VariantDetail
 
 /*! \brief A standard variant limited to a special set of types.

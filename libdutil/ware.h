@@ -1,7 +1,7 @@
 #ifndef DUTIL_WARE_H
 #define DUTIL_WARE_H
-#include "namedparameter.h"
 #include <string>
+#include "namedparameter.h"
 
 namespace DUTIL {
 
@@ -13,19 +13,19 @@ namespace DUTIL {
  */
 class Ware
 {
-public:
-    //! NamedStirng member used as a key to identify concrete classes.
-    D_NAMED_STRING(Type);
+  public:
+  //! NamedStirng member used as a key to identify concrete classes.
+  D_NAMED_STRING(DUTIL_Ware_Type)
 
-    //! Function for getting the full concrete class name.
-    std::string getConcreteClassName() const;
+  //! Function for getting the full concrete class name.
+  std::string getConcreteClassName() const;
 
-    //! Function for getting the short (i.e. without namespace names) concrete class name.
-    std::string getShortConcreteClassName() const;
+  //! Function for getting the short (i.e. without namespace names) concrete class name.
+  std::string getShortConcreteClassName() const;
 
-    virtual ~Ware() = default;
+  virtual ~Ware() = default;
 };
 
-} // namespace DUTIL
+}  // namespace DUTIL
 
-#endif // DUTIL_WARE_H
+#endif  // DUTIL_WARE_H

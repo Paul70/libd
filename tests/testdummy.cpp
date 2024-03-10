@@ -18,8 +18,9 @@ DUTIL::ConstructionValidator const& TestDummy::getConstructionValidator()
             sr.defaultValue = Variant(COLOR::BLUE);
             return sr;} ()
         },
-        {}, // no WarelistRules needed
-        ProjectWare::getConstructionValidator());
+        {} // no WarelistRules needed
+        //ProjectWare::getConstructionValidator()
+        );
   // clang-format on
   return cv;
 }

@@ -17,8 +17,9 @@ ConstructionValidator const& CompoundWareA::getConstructionValidator()
 {
   using SR = SettingRule;
   static const ConstructionValidator cv(
-      {SR::forNamedParameter<LabelA>(SR::Usage::MANDATORY_NO_DEFAULT, "a label")}, {},
-      ProjectWare::getConstructionValidator());
+      {SR::forNamedParameter<LabelA>(SR::Usage::MANDATORY_NO_DEFAULT, "a label")}, {}
+      //ProjectWare::getConstructionValidator()
+  );
   return cv;
 }
 
@@ -41,8 +42,9 @@ ConstructionValidator const& CompoundWareB::getConstructionValidator()
         sr.defaultValue = 42.1;
         return sr;
       }()},
-      {WarelistRule::forSharedWare<WareAPtrRef>("pointer to const ware A")},
-      ProjectWare::getConstructionValidator());
+      {WarelistRule::forSharedWare<WareAPtrRef>("pointer to const ware A")}
+      //ProjectWare::getConstructionValidator()
+  );
   return cv;
 }
 
@@ -60,8 +62,9 @@ ConstructionValidator const& CompoundWareBIntermediate::getConstructionValidator
         sr.defaultValue = 42.1;
         return sr;
       }()},
-      {WarelistRule::forSubobject<WareBInstance>("my own ware B object")},
-      ProjectWare::getConstructionValidator());
+      {WarelistRule::forSubobject<WareBInstance>("my own ware B object")}
+      //ProjectWare::getConstructionValidator()
+  );
   return cv;
 }
 
@@ -97,8 +100,9 @@ ConstructionValidator const& CompoundWareC::getConstructionValidator()
             WarelistRule wr = WarelistRule::forSubobject<WareBInstance>("my own ware B object");
             wr.usage = WarelistRule::Usage::MANDATORY;
             return wr;
-         }()},
-        ProjectWare::getConstructionValidator());
+         }()}
+        //ProjectWare::getConstructionValidator()
+        );
   // clang-format on
   return cv;
 }
@@ -119,7 +123,8 @@ ConstructionValidator const& CompoundWareD::getConstructionValidator()
   using SR = SettingRule;
   static const ConstructionValidator cv({SR::forNamedParameter<CompoundWareD::NameD>(
                                             SR::Usage::MANDATORY_NO_DEFAULT, "a object name")},
-                                        {}, ProjectWare::getConstructionValidator());
+                                        {}  //ProjectWare::getConstructionValidator()
+  );
   return cv;
 }
 

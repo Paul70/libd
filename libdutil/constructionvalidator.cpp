@@ -27,7 +27,7 @@ bool checkASmallerThanB(Variant::Type type, Variant const& A, Variant const& B)
   } else if (type == T::DOUBLE) {
     if (A.getAs<double>() > B.getAs<double>())
       return false;
-  } else {
+  } else if (type == T::UINT64) {
     if (A.getAs<std::uint64_t>() > B.getAs<std::uint64_t>())
       return false;
   }
@@ -156,7 +156,7 @@ std::string ConstructionValidator::recursiveCheck(ConstructionValidator const& c
 
 std::string ConstructionValidator::typeSettingCheck(ConstructionData const& cd)
 {
-  if (cd.s.hasKey("Type")) {
+  if (cd.s.hasKey(Ware::DUTIL_Ware_Type::getParameterName())) {
     return "";
   }
   return "Setting a type parameter in consturciton data is mandatory in this case, see "
