@@ -32,8 +32,8 @@ ConstructionValidator const& Clock::getConstructionValidator()
        }(),
        []() {
          SR sr = SR::forNamedParameter<Clock::StartTime>(
-             SR::Usage::MANDATORY_WITH_DEFAULT, "Start time of the clock in milli seconds.");
-         sr.defaultValue = Clock::setStartTimeToNow();
+             SR::Usage::OPTIONAL, "Start time of the clock as a value of time since epoche.");
+         //sr.defaultValue = Clock::resetStart();
          return sr;
        }()},
       {});
@@ -43,9 +43,7 @@ ConstructionValidator const& Clock::getConstructionValidator()
 Clock::Clock() :
     clock_(std::chrono::system_clock()),
     type_(Clock::Type::SYSTEM),
-    zone_(Zone::LOCAL),
-    intermediate_(),
-    start_()
+    zone_(Zone::LOCAL)
 {
   initialize();
 }
@@ -54,7 +52,19 @@ Clock::Clock(ConstructionData const& cd) :
     type_(getConstructionValidator().validateNamedEnum<Clock::Type>(cd)),
     zone_(getConstructionValidator().validateNamedEnum<Clock::Zone>(cd))
 {
-  setTimePoint();
+
+  switch (type_) {
+    case Clock::Type::SYSTEM:
+      clock_ = std::chrono::system_clock();
+      break;
+    case Clock::Type::STEADY:
+      clock_ = std::chrono::steady_clock();
+      break;
+    case Clock::Type::HIGH_RESOLUTION:
+      clock_ = std::chrono::high_resolution_clock();
+      break;
+  }
+  initialize();
 }
 
 Clock::Zone Clock::getTimeZone() const
@@ -69,82 +79,124 @@ Clock::Type Clock::getType() const
 
 void Clock::initialize()
 {
-  // sets the start and intermediate time point to the current clock time
-  std::visit(Overload{[&](std::chrono::time_point<std::chrono::system_clock> tp) {
-                        if (tp.time_since_epoch() == tp.min().time_since_epoch())
-                          return;
-                      },
-                      [&](std::chrono::time_point<std::chrono::steady_clock> tp) {
-                        if (tp.time_since_epoch() == tp.min().time_since_epoch())
-                          return;
-                      }},
-             start_);
-  setStartTimePoint();
+  resetStart();
   advance();
 }
 
 void Clock::advance()
 {
-  setTimePoint();
+  std::visit(
+      Overload{
+          [&](std::chrono::system_clock) {
+            if (type_ == Type::SYSTEM) {
+              intermediate_ = std::chrono::system_clock::now();
+            } else {
+              D_ASSERT(type_ == Type::HIGH_RESOLUTION);
+              intermediate_ = std::chrono::high_resolution_clock::now();
+            }
+          },
+          [&](std::chrono::steady_clock) { intermediate_ = std::chrono::steady_clock::now(); },
+      },
+      clock_);
 }
 
-TIME::milli_sec_t Clock::elapsedMilliSec() const
-{
-  return std::chrono::milliseconds(elapsedNanoSec()).count();
-}
-
-TIME::nano_sec_t Clock::elapsedNanoSec() const
+TIME::nano_sec_t Clock::elapsed(TIME::UnitPrefix prefix) const
 {
   // check if starting and intermediate time point variant have the same index.
   D_ASSERT(start_.index() == intermediate_.index());
 
-  TIME::nano_sec_t elapsed;
-  std::visit(
+  auto elapsed = std::visit(
       Overload{[&](std::chrono::system_clock) {
                  auto tp1 = getStartTimePoint<std::chrono::system_clock::time_point>();
                  auto tp2 = getIntermediateTimePoint<std::chrono::system_clock::time_point>();
-                 elapsed = (tp2 - tp1).count();
-                 return;
+                 return std::chrono::duration_cast<std::chrono::nanoseconds>(tp2 - tp1);
                },
                [&](std::chrono::steady_clock) {
                  auto tp1 = getStartTimePoint<std::chrono::steady_clock::time_point>();
                  auto tp2 = getIntermediateTimePoint<std::chrono::steady_clock::time_point>();
-                 elapsed = (tp2 - tp1).count();
-                 return;
+                 return std::chrono::duration_cast<std::chrono::nanoseconds>(tp2 - tp1);
                }},
       clock_);
 
-  return elapsed;
-}
-
-void Clock::setTimePoint()
-{
-  std::visit(Overload{
-                 [&](std::chrono::system_clock) {
-                   if (type_ == Type::SYSTEM)
-                     intermediate_ = forSystemOrHighResolutionType_Now();
-                 },
-                 [&](std::chrono::steady_clock c) { intermediate_ = c.now(); },
-             },
-             clock_);
-}
-
-void Clock::setStartTimePoint()
-{
-  std::visit(Overload{
-                 [&](std::chrono::system_clock) {
-                   if (type_ == Type::SYSTEM)
-                     start_ = forSystemOrHighResolutionType_Now();
-                 },
-                 [&](std::chrono::steady_clock c) { start_ = c.now(); },
-             },
-             clock_);
-}
-
-Clock::TimePoint Clock::forSystemOrHighResolutionType_Now() const
-{
-  if (type_ == Clock::Type::HIGH_RESOLUTION) {
-    return std::chrono::system_clock::now();
+  switch (prefix) {
+    case TIME::UnitPrefix::NANO:
+      return elapsed.count();
+      break;
+    case TIME::UnitPrefix::MICRO:
+      return std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+      break;
+    case TIME::UnitPrefix::MILLI:
+      return std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+      break;
+    case TIME::UnitPrefix::SECONDS:
+      return std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+      break;
+    case TIME::UnitPrefix::KILO:
+      return static_cast<TIME::basic_sec_t>(
+          std::chrono::duration_cast<std::chrono::seconds>(elapsed).count() * TIME::oneByKilo);
+      break;
+    case TIME::UnitPrefix::MEGA:
+      return static_cast<TIME::basic_sec_t>(
+          std::chrono::duration_cast<std::chrono::seconds>(elapsed).count() * TIME::oneByMega);
+      break;
+    default:
+      return elapsed.count();
+      break;
   }
-  return std::chrono::high_resolution_clock::now();
+}
+
+void Clock::resetStart()
+{
+  std::visit(Overload{
+                 [&](std::chrono::system_clock) {
+                   if (type_ == Type::SYSTEM) {
+                     start_ = std::chrono::system_clock::now();
+                   } else {
+                     D_ASSERT(type_ == Type::HIGH_RESOLUTION);
+                     start_ = std::chrono::high_resolution_clock::now();
+                   }
+                 },
+                 [&](std::chrono::steady_clock) { start_ = std::chrono::steady_clock::now(); },
+             },
+             clock_);
+}
+
+TIME::basic_sec_t Clock::getStartTimeSinceEpoche(TIME::UnitPrefix prefix) const
+{
+  auto elapsed
+      = std::visit(Overload{[&](std::chrono::system_clock) {
+                              auto tp = getStartTimePoint<std::chrono::system_clock::time_point>();
+                              return tp.time_since_epoch();
+                            },
+                            [&](std::chrono::steady_clock) {
+                              auto tp = getStartTimePoint<std::chrono::steady_clock::time_point>();
+                              return tp.time_since_epoch();
+                            }},
+                   clock_);
+
+  switch (prefix) {
+    case TIME::UnitPrefix::NANO:
+      return elapsed.count();
+      break;
+    case TIME::UnitPrefix::MICRO:
+      return std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+      break;
+    case TIME::UnitPrefix::MILLI:
+      return std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+      break;
+    case TIME::UnitPrefix::SECONDS:
+      return std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+      break;
+    case TIME::UnitPrefix::KILO:
+      return static_cast<TIME::basic_sec_t>(
+          std::chrono::duration_cast<std::chrono::seconds>(elapsed).count() * TIME::oneByKilo);
+      break;
+    case TIME::UnitPrefix::MEGA:
+      return static_cast<TIME::basic_sec_t>(
+          std::chrono::duration_cast<std::chrono::seconds>(elapsed).count() * TIME::oneByMega);
+      break;
+    default:
+      return elapsed.count();
+      break;
+  }
 }

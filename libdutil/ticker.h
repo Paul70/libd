@@ -41,11 +41,11 @@ class Ticker final : public ProjectWare, public D_NAMED_CLASS(::DUTIL::Ticker)
   //! Construct with construction data
   explicit Ticker(ConstructionData const& cd);
 
-  //Ticker(Ticker const& t) = default;
-  //Ticker(Ticker&& t) = default;
-
   //! Return the time resolution.
   DUTIL::real_t getResolution_s() const;
+
+  //! Return elapsed time in seconds.
+  DUTIL::real_t getElapsedTime() const;
 
   //! Increase the ticker by the given value.
   Tick advance(Tick ticks = Ticker::single);

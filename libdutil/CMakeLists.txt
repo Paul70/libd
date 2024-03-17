@@ -17,7 +17,6 @@ set(dutil_HEADERS
     namedparameter.h
     namedreference.h
     namedreferenceparameter.h
-    now.h
     overload.h
     projectware.h
     settingrule.h
@@ -47,7 +46,6 @@ set(dutil_SOURCES
     loggingsource.cpp
     namedenum.cpp
     namedreferenceparameter.cpp
-    now.cpp
     projectware.cpp
     settingrule.cpp
     settings.cpp

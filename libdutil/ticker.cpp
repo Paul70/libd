@@ -55,6 +55,11 @@ Ticker::Tick Ticker::advance(Tick ticks)
   return now_;
 }
 
+DUTIL::real_t Ticker::getElapsedTime() const
+{
+  return resolution_s * now_;
+}
+
 Ticker::Tick Ticker::now() const
 {
   return now_;

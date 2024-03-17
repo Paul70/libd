@@ -2,11 +2,11 @@
 #define DUTIL_CLOCK_H
 #include "concretefactory.h"
 #include "namedclass.h"
-#include "now.h"
 #include "projectware.h"
-#include "time.h"
 
 #include <chrono>
+#include <iomanip>
+#include "time.h"
 
 namespace DUTIL {
 class ConstructionValidator;
@@ -33,29 +33,17 @@ class Clock final : public ProjectWare, public D_NAMED_CLASS(::DUTIL::Clock)
   D_NAMED_BOOL(InitializeStartTimeWithSystemClock)
 
   //! Set the start time value.
-  D_NAMED_PARAMETER(StartTime, TIME::milli_sec_t);
-
-  template <typename C = std::chrono::system_clock>
-  static TIME::milli_sec_t setStartTimeToNow()
-  {
-    return std::chrono::duration_cast<std::chrono::milliseconds>(C::now().time_since_epoch())
-        .count();
-  }
+  D_NAMED_PARAMETER(StartTime, TIME::basic_sec_t);
 
   /*! \brief Put a time point into a std stream object.
    *
    * Function does not change the tick and time point owned
-   * by instances of this class.
+   * by instances of this class. This method uses a std::chrono::system_clock.
    */
-  template <typename S = std::ostream, typename C = std::chrono::system_clock>
+  template <typename S = std::ostream>
   static void putNowToStream(S& stream = std::cout, Zone z = Zone::LOCAL)
   {
-    std::time_t t_c;
-    if constexpr (std::is_same_v<C, std::chrono::system_clock>)
-      t_c = std::chrono::system_clock::to_time_t(Now::now());
-    else
-      t_c = std::chrono::high_resolution_clock::to_time_t(
-          Now::now<std::chrono::high_resolution_clock>());
+    std::time_t t_c = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 
     if (z == Zone::LOCAL)
       stream << std::put_time(std::localtime(&t_c), "%F %T");
@@ -86,8 +74,11 @@ class Clock final : public ProjectWare, public D_NAMED_CLASS(::DUTIL::Clock)
    */
   void initialize();
 
-  //! Return the start time in milli seconds
-  TIME::milli_sec_t getStartTime_ms() const;
+  //! Resets the start time point to now.
+  void resetStart();
+
+  //! Return the start time as absolute number since start of epoche.
+  TIME::basic_sec_t getStartTimeSinceEpoche(TIME::UnitPrefix prefix = TIME::UnitPrefix::NANO) const;
 
   /*! \brief Set the intermediate time point to the current clock time.
    *
@@ -102,8 +93,7 @@ class Clock final : public ProjectWare, public D_NAMED_CLASS(::DUTIL::Clock)
    * Asserts in case the clock object is not initialized.
    * Calculation internally is based on nanoseconds
    */
-  TIME::milli_sec_t elapsedMilliSec() const;
-  TIME::nano_sec_t elapsedNanoSec() const;
+  TIME::basic_sec_t elapsed(TIME::UnitPrefix prefix = TIME::UnitPrefix::NANO) const;
 
   TIME::milli_sec_t timeSinceEpoch_milli_sec() const;
 
@@ -124,15 +114,24 @@ class Clock final : public ProjectWare, public D_NAMED_CLASS(::DUTIL::Clock)
    * Uses the saved time point, that is this method my treats a time
    * point from the past.
    */
-  template <typename T = std::ostream, typename Clock = std::chrono::system_clock>
-  void putSavedTimePointToStream(T& stream = std::cout) const
+  template <typename T = std::ostream>
+  void putIntermediateTimePointToStream(T& stream = std::cout) const
   {
-    auto tp = std::get<std::chrono::time_point<Clock>>(intermediate_);
-    const std::time_t t_c = Clock::to_time_t(tp);
-    if (zone_ == Zone::LOCAL)
-      stream << std::put_time(std::localtime(&t_c), "%F %T");
-    else
-      stream << std::put_time(std::gmtime(&t_c), "%F %T");
+    std::visit(
+        Overload{
+            [&](std::chrono::system_clock) {
+              auto tp = getIntermediateTimePoint<std::chrono::system_clock::time_point>();
+              const std::time_t t_c = std::chrono::system_clock::to_time_t(tp);
+              if (zone_ == Zone::LOCAL)
+                stream << std::put_time(std::localtime(&t_c), "%F %T");
+              else
+                stream << std::put_time(std::gmtime(&t_c), "%F %T");
+            },
+            [&](std::chrono::steady_clock) {
+              D_THROW("Putting a std::steady_clock time point into a stream is not supported.");
+            },
+        },
+        clock_);
   }
 
   private:
@@ -141,12 +140,7 @@ class Clock final : public ProjectWare, public D_NAMED_CLASS(::DUTIL::Clock)
   using TimePoint = std::variant<std::chrono::time_point<std::chrono::system_clock>,
                                  std::chrono::time_point<std::chrono::steady_clock>>;
 
-  void setTimePoint();
-  void setStartTimePoint();
-  TimePoint forSystemOrHighResolutionType_Now() const;
-
-  // Attributes defined at construction and not changable.
-  const ClockObject clock_;
+  ClockObject clock_;
   const Type type_;
   const Zone zone_;
 

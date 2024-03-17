@@ -19,6 +19,7 @@ set(libd_tests_SOURCES
     trivialware.cpp
     zoo.cpp
     libdutil/basictypestests.cpp
+    libdutil/clocktests.cpp
     libdutil/constructiondatatests.cpp
     libdutil/constructionvalidatortests.cpp
     libdutil/datasettests.cpp
