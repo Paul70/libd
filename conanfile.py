@@ -34,6 +34,7 @@ class LibdRecipe(ConanFile):
     # Requirements for build (tool_requires) and host (requires) context 
     def requirements(self):
         self.requires("gtest/1.14.0")
+        self.requires("mariadb-connector-c/3.3.3")
         pass
 
     def build_requirements(self):
