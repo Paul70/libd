@@ -1,9 +1,9 @@
 #include "libdutil/constructiondata.h"
-#include "tests/compoundware.h"
-#include "tests/factorytestsexampleclass.h"
+#include "tests/libtesting/compoundware.h"
+#include "tests/libtesting/factorytestsexampleclass.h"
+#include "tests/libtesting/trivialware.h"
+#include "tests/libtesting/zoo/zoo.h"
 #include "tests/testbase.h"
-#include "tests/trivialware.h"
-#include "tests/zoo.h"
 
 using namespace TESTS;
 using namespace DUTIL;

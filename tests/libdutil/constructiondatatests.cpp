@@ -1,10 +1,10 @@
-#include "libdutil/constructiondata.h"
-#include "libdutil/constructionvalidator.h"
-#include "libdutil/namedreference.h"
-#include "libdutil/settings.h"
-#include "tests/compoundware.h"
+#include "libd/libdutil/constructiondata.h"
+#include "libd/libdutil/constructionvalidator.h"
+#include "libd/libdutil/namedreference.h"
+#include "libd/libdutil/settings.h"
+#include "tests/libtesting/compoundware.h"
+#include "tests/libtesting/trivialware.h"
 #include "tests/testbase.h"
-#include "tests/trivialware.h"
 
 using namespace DUTIL;
 

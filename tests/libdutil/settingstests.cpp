@@ -1,8 +1,8 @@
 #include "libdutil/constructiondata.h"
 #include "libdutil/namedparameter.h"
 #include "libdutil/settings.h"
+#include "tests/libtesting/testdummy.h"
 #include "tests/testbase.h"
-#include "tests/testdummy.h"
 
 using namespace DUTIL;
 

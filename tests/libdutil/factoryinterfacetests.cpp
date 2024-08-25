@@ -1,6 +1,6 @@
 #include "libd/libdutil/constructiondata.h"
 #include "libd/libdutil/factoryinterface.h"
-#include "tests/factorytestsexampleclass.h"
+#include "tests/libtesting/factorytestsexampleclass.h"
 #include "tests/testbase.h"
 
 using namespace DUTIL;
