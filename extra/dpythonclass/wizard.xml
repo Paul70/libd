@@ -2,9 +2,9 @@
 <!--
 Custom class wizard configuration file for libd class.
 -->
-<wizard version="1" kind="class" id="B.DTIME_class" category="A.CustomClasses">
-    <description>Creates a new DTIME class from a template.</description>
-    <displayname>DTIME class</displayname>;
+<wizard version="1" kind="class" id="B.Libd_DPYTHON_class" category="A.CustomClasses">
+    <description>Creates a new Libd DPYTHON class from a template.</description>
+    <displayname>Libd DPYTHON class</displayname>;
     <displaycategory>Custom Classes</displaycategory>
     <files>
         <file source="class.cpp" target="%ClassName:l%.%CppSourceSuffix%" openeditor="true"/>

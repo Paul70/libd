@@ -1,6 +1,6 @@
 #include "%ClassName:l%.%CppHeaderSuffix%"
 
-using namespace DTIME;
+using namespace LIBD::DPYTHON;
 
 %ClassName%::%ClassName%([[maybe_unused]] ConstructionData const & cd)
 {}

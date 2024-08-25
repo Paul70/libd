@@ -1,11 +1,11 @@
-#ifndef DTIME_%ClassName:u%_H
-#define DTIME_%ClassName:u%_H
+#ifndef LIBD_DPYTHON_%ClassName:u%_H
+#define LIBD_DPYTHON_%ClassName:u%_H
 
-namespace DUTIL {
+namespace DPYTHON {
 struct ConstructionData;
 }
 
-namespace DTIME {
+namespace LIBD::DPYTHON {
 
 /*! \\brief description of %ClassName%
  *
@@ -21,5 +21,5 @@ public:
 private:
 };
 
-} // namespace DTIME
-#endif // DTIME_%ClassName:u%_H
+} // namespace LIBD::DPYTHON
+#endif // LIBD_DPYTHON_%ClassName:u%_H
