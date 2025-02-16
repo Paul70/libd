@@ -1,11 +1,11 @@
 #ifndef DUTIL_UTILITY_H
 #define DUTIL_UTILITY_H
-#include "basictypes.h"
-#include "exception.h"
 #include <cstdint>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
+#include "basictypes.h"
+#include "exception.h"
 
 namespace DUTIL {
 using namespace BasicTypes;
@@ -23,7 +23,7 @@ namespace Utility {
  * It is sometimes necessary to replace comma by period. The function does nothing
  * if no seperator is found.
  */
-void replaceDecimalSeperator(char const oldSep, char const newSep, std::string &value) noexcept;
+void replaceDecimalSeperator(char const oldSep, char const newSep, std::string& value) noexcept;
 
 /*! \brief Convert an integer or double number into std::string.
  *
@@ -38,18 +38,23 @@ std::string doubleToString(double value, int precision = 10) noexcept;
  *
  * Transformation is only possible from std::arithmetic types.
  */
-template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, bool> = true>
+template <typename T, std::enable_if_t<std::is_arithmetic_v<T>, bool> = true>
 std::string arithmeticToString(T value, std::int8_t precision = 10) noexcept
 {
-    if constexpr (is_integer_v<T>) {
-        return integerToString(value);
-    } else if constexpr (std::is_floating_point_v<T>) {
-        return doubleToString(value, precision);
-    } else {
-        auto result = std::to_string(value);
-        replaceDecimalSeperator(',', '.', result);
-        return result;
-    }
+  if constexpr (is_integer_v<T>)
+  {
+    return integerToString(value);
+  }
+  else if constexpr (std::is_floating_point_v<T>)
+  {
+    return doubleToString(value, precision);
+  }
+  else
+  {
+    auto result = std::to_string(value);
+    replaceDecimalSeperator(',', '.', result);
+    return result;
+  }
 }
 
 /*! \brief Convert a std::string into an arithmetic type.
@@ -77,32 +82,50 @@ std::string arithmeticToString(T value, std::int8_t precision = 10) noexcept
  * ii)  If string contains an invalid value which is not convertible by the above functions.
  * iii) If the string number is out of range of the target type.
  */
-template<typename T, std::enable_if_t<std::is_arithmetic_v<T>, bool> = true>
-T stringToArithmetic(std::string &value)
+template <typename T, std::enable_if_t<std::is_arithmetic_v<T>, bool> = true>
+T stringToArithmetic(std::string& value)
 {
-    Utility::replaceDecimalSeperator(',', '.', value);
-    try {
-        if constexpr (is_integer_v<T>) {
-            return static_cast<T>(std::stoll(value));
-        }
-        if constexpr (std::is_unsigned_v<T>) {
-            if (value.front() == '-')
-                value.erase(value.begin());
-            return std::stoull(value);
-        }
-        if constexpr (std::is_same_v<T, double>) {
-            return std::stod(value);
-        }
-        if constexpr (std::is_same_v<T, bool>) {
-            return !value.empty();
-        }
-        D_ASSERT_MSG(false, "Unimplemented case!");
-    } catch (std::invalid_argument const &ex) {
-        D_THROW(ex.what());
-    } catch (std::out_of_range const &ex) {
-        D_THROW(ex.what());
+  Utility::replaceDecimalSeperator(',', '.', value);
+  try
+  {
+    if constexpr (is_integer_v<T>)
+    {
+      return static_cast<T>(std::stoll(value));
     }
+    if constexpr (std::is_unsigned_v<T>)
+    {
+      if (value.front() == '-')
+        value.erase(value.begin());
+      return std::stoull(value);
+    }
+    if constexpr (std::is_same_v<T, double>)
+    {
+      return std::stod(value);
+    }
+    if constexpr (std::is_same_v<T, bool>)
+    {
+      return !value.empty();
+    }
+    D_ASSERT_MSG(false, "Unimplemented case!");
+  }
+  catch (std::invalid_argument const& ex)
+  {
+    D_THROW(ex.what());
+  }
+  catch (std::out_of_range const& ex)
+  {
+    D_THROW(ex.what());
+  }
 }
+
+/*! \brief Convert a wchar_t array into a std::string.
+ *
+ * Throw an assertion in case of conversion errors
+ */
+// std::string fromWchar(wchar_t* /*value*/)
+// {
+//   return {};
+// }
 
 /*! \brief Convert a given type T into std::string.
  *
@@ -113,17 +136,19 @@ T stringToArithmetic(std::string &value)
  *
  * 2. Other types not implemented yet
  */
-template<typename T>
+template <typename T>
 std::string toString(T value)
 {
-    if constexpr (is_string_v<T>) {
-        return value;
-    }
-    if constexpr (std::is_arithmetic_v<T>) {
-        return arithmeticToString(value);
-    }
-    D_ASSERT_MSG(false, "Unimplemented case!");
-    // later, if a conversion is not possible and it is no error, this function return an empty string
+  if constexpr (is_string_v<T>)
+  {
+    return value;
+  }
+  if constexpr (std::is_arithmetic_v<T>)
+  {
+    return arithmeticToString(value);
+  }
+  D_ASSERT_MSG(false, "Unimplemented case!");
+  // later, if a conversion is not possible and it is no error, this function return an empty string
 }
 
 /*! \brief Convert a std::string into the given target type T.
@@ -136,15 +161,18 @@ std::string toString(T value)
  *
  * 3. Other types not implemented yet
  */
-template<typename T>
-std::pair<bool, T> fromString(std::string &value)
+template <typename T>
+std::pair<bool, T> fromString(std::string& value)
 {
-    if constexpr (std::is_arithmetic_v<T>) {
-        return std::make_pair(true, stringToArithmetic<T>(value));
-    } else if constexpr (std::is_same_v<T, std::string>) {
-        return std::make_pair(true, std::string(value));
-    }
-    D_ASSERT_MSG(false, "Unimplemented case!");
+  if constexpr (std::is_arithmetic_v<T>)
+  {
+    return std::make_pair(true, stringToArithmetic<T>(value));
+  }
+  else if constexpr (std::is_same_v<T, std::string>)
+  {
+    return std::make_pair(true, std::string(value));
+  }
+  D_ASSERT_MSG(false, "Unimplemented case!");
 }
 
 /*! \brief Remove leading and trailing whitespace characters from a string.
@@ -161,8 +189,8 @@ std::pair<bool, T> fromString(std::string &value)
  *          might have some dangerous side effects this funciotn is named
  *          trimThis
  */
-void trimThis(std::string &str);
-std::string trimMove(std::string &&str);
+void trimThis(std::string& str);
+std::string trimMove(std::string&& str);
 std::string trim(std::string str);
 
 /*! \brief Remove trailing zero characters from a string.
@@ -170,7 +198,7 @@ std::string trim(std::string str);
  * For example:
  *  "2.300000000" becomes "2.3"
  */
-void trimZeros(std::string &str);
+void trimZeros(std::string& str);
 
 /*! \brief Split a single string into substrings.
  *
@@ -184,8 +212,8 @@ void trimZeros(std::string &str);
  * Note, that leading and trailing whitespaces are removed by default using Utility::trim function.
  * If this behaviour is not wanted, set the flag 'removeWS' to false.
  */
-StringList split(std::string const &str, char const seperator = ',', bool removeWS = true);
+StringList split(std::string const& str, char const seperator = ',', bool removeWS = true);
 
-} // namespace Utility
-} // namespace DUTIL
-#endif // DUTIL_UTILITY_H
+}  // namespace Utility
+}  // namespace DUTIL
+#endif  // DUTIL_UTILITY_H

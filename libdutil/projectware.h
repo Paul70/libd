@@ -16,7 +16,7 @@ class ConstructionValidator;
 class ProjectWare : public Ware
 {
   public:
-  //static ConstructionValidator const& getConstructionValidator();
+  virtual ~ProjectWare() = default;
 
   template <typename DerivedClass>
   static std::unique_ptr<DerivedClass> createNewInstanceViaFactory(ConstructionData const& cd)

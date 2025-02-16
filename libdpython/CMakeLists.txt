@@ -1,9 +1,13 @@
+find_package(pybind11 CONFIG REQUIRED)
+
 set(dpython_HEADERS
     pythoninterface.h
+    venv.h
 )
 
 set(dpython_SOURCES
     pythoninterface.cpp
+    venv.cpp
 )
 
 add_library(dpython SHARED)
@@ -27,6 +31,5 @@ target_include_directories(dpython
 )
 target_link_libraries(dpython
     PUBLIC
-    dglobals
     dutil
 )

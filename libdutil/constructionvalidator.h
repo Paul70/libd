@@ -148,7 +148,8 @@ class ConstructionValidator
   {
     // Note, cd refers to the overall and not the the subobject construction data, here.
     auto& subCD = validateAndReturnSubObjectCD(cd, NR::getReferenceName());
-    if (proxyCheck(subCD)) {
+    if (proxyCheck(subCD))
+    {
       return nullptr;
     }
     return makeObjectHelper<typename NR::RT>(subCD);
@@ -160,7 +161,8 @@ class ConstructionValidator
     // hier kommt aus irgnedeinem grung ein item zu viel raus
     auto subobjectCDPtrVec = validateAndReturnSubobjectCDs(cd, NR::getReferenceName());
 
-    if (proxyCheck(*subobjectCDPtrVec.front())) {
+    if (proxyCheck(*subobjectCDPtrVec.front()))
+    {
       return std::vector<std::unique_ptr<typename NR::RT>>();
     }
     std::vector<std::unique_ptr<typename NR::RT>> warePtrVec(subobjectCDPtrVec.size());

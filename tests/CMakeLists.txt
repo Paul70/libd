@@ -5,6 +5,8 @@ set(libd_tests_HEADERS
     testbase.h
 )
 set(libd_tests_SOURCES
+    libdpython/scripttests.cpp
+    libdpython/systemenvironmenttests.cpp
     libdutil/basictypestests.cpp
     libdutil/clocktests.cpp
     libdutil/constructiondatatests.cpp
@@ -27,7 +29,6 @@ set(libd_tests_SOURCES
     testbase.cpp
 )
 
-
 add_executable(libd_tests)
 target_sources(libd_tests PRIVATE
     ${libd_tests_HEADERS}
@@ -42,8 +43,14 @@ target_link_libraries(libd_tests PRIVATE
     GTest::gtest
     GTest::gmock
     dglobals
+    dpython
     dutil
     dversion
     testing
 )
+
+message(STATUS "Script output: ${script_output}")
+
+
+
 
